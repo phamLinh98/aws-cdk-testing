@@ -9,53 +9,53 @@ export class ApiStack extends Stack {
     super(scope, id, props);
 
     /* DynamoDB tables */
-    const userTable = new dynamodb.Table(this, "UserTable", {
-      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: RemovalPolicy.RETAIN,
-      tableName: "user",
-    });
+    // const userTable = new dynamodb.Table(this, "UserTable", {
+    //   partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
+    //   billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+    //   removalPolicy: RemovalPolicy.RETAIN,
+    //   tableName: "user",
+    // });
 
-    const uploadTable = new dynamodb.Table(this, "UploadTable", {
-      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: RemovalPolicy.RETAIN,
-      tableName: "upload-status",
-    });
+    // const uploadTable = new dynamodb.Table(this, "UploadTable", {
+    //   partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
+    //   billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+    //   removalPolicy: RemovalPolicy.RETAIN,
+    //   tableName: "upload-status",
+    // });
 
     /* Lambda layers / common env can go here */
 
-    const getUserFn = new lambda.Function(this, "GetUserFn", {
+    const getUrlUpdateUploading = new lambda.Function(this, "getUrlHandler", {
       runtime: lambda.Runtime.NODEJS_18_X,
-      handler: "get-user.handler",
-      code: lambda.Code.fromAsset("src/build/lambda"), // folder
+      handler: "getUrlHandler.handler",
+      code: lambda.Code.fromAsset("src/build/lambda/create-preurl-s3-update-status-uploading-lambda"), // folder
       memorySize: 128,
       timeout: Duration.seconds(5),
-      environment: {
-        USER_TABLE: userTable.tableName,
-      },
-      functionName: "get-user",
+      // environment: {
+      //   USER_TABLE: userTable.tableName,
+      // },
+      functionName: "create-preurl-s3-update-status-uploading-lambda",
     });
 
-    const getUploadStatusFn = new lambda.Function(this, "GetUploadStatusFn", {
+    const getUploadStatusFn = new lambda.Function(this, "getStatusHandler", {
       runtime: lambda.Runtime.NODEJS_18_X,
-      handler: "get-upload-status.handler",
-      code: lambda.Code.fromAsset("src/build/lambda"),
+      handler: "getStatusHandler.handler",
+      code: lambda.Code.fromAsset("src/build/lambda/get-status-from-dynamodb-lambda"), // folder
       memorySize: 128,
       timeout: Duration.seconds(5),
-      environment: {
-        UPLOAD_TABLE: uploadTable.tableName,
-      },
-      functionName: "get-upload-status",
+      // environment: {
+      //   UPLOAD_TABLE: uploadTable.tableName,
+      // },
+      functionName: "get-status-from-dynamodb-lambda",
     });
 
     /* Grant R/W */
-    userTable.grantReadData(getUserFn);
-    uploadTable.grantReadData(getUploadStatusFn);
+    // userTable.grantReadData(getUserFn);
+    // uploadTable.grantReadData(getUploadStatusFn);
 
     /* API Gateway (REST) */
-    const api = new apigateway.RestApi(this, "ServerlessApi", {
-      restApiName: "ServerlessDemoApi",
+    const api = new apigateway.RestApi(this, "linhclass", {
+      restApiName: "linhclass",
       deployOptions: { stageName: "prod" },
       defaultCorsPreflightOptions: {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
@@ -63,15 +63,13 @@ export class ApiStack extends Stack {
       },
     });
 
-    // /user/{id}
-    const user = api.root.addResource("user");
-    const userById = user.addResource("{id}");
-    userById.addMethod("GET", new apigateway.LambdaIntegration(getUserFn));
+    // get-url
+    const getUrl = api.root.addResource("get-url");
+    getUrl.addMethod("GET", new apigateway.LambdaIntegration(getUrlUpdateUploading));
 
-    // /upload-status/{id}
-    const upload = api.root.addResource("upload-status");
-    const uploadById = upload.addResource("{id}");
-    uploadById.addMethod(
+    //get-status
+    const getStatus = api.root.addResource("get-status");
+    getStatus.addMethod(
       "GET",
       new apigateway.LambdaIntegration(getUploadStatusFn)
     );

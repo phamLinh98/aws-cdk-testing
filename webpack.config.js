@@ -4,9 +4,10 @@ const glob = require("glob");
 const entries = Object.fromEntries(
   glob.sync("./src/lambda/**/*.ts").map(relativePath => {
     const parsed = path.parse(relativePath);
-    const fileName = parsed.name; // Chỉ lấy tên file
+    const relativeDir = path.relative("./src/lambda", parsed.dir); // Đường dẫn tương đối từ src/lambda
+    const fileName = path.join(relativeDir, parsed.name); // Giữ nguyên cấu trúc thư mục
     const absolutePath = path.resolve(__dirname, relativePath);
-    return [fileName, absolutePath]; // Sử dụng tên file làm key
+    return [fileName, absolutePath]; // Sử dụng cấu trúc thư mục làm key
   })
 );
 
@@ -21,8 +22,8 @@ module.exports = {
     ],
   },
   output: {
-    path: path.resolve(__dirname, "src/build/lambda"),
-    filename: "[name].mjs", // Sử dụng key từ entries làm tên file
+    path: path.resolve(__dirname, "src/build/lambda"), // Thư mục đầu ra
+    filename: "[name].mjs", // Giữ nguyên cấu trúc thư mục
     library: { type: "module" },
     module: true,
   },
