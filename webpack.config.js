@@ -1,11 +1,19 @@
 const path = require("path");
+const glob = require("glob");
+
+const entries = Object.fromEntries(
+  glob.sync("./src/lambda/**/*.ts").map(relativePath => {
+    const parsed = path.parse(relativePath);
+    const fileName = parsed.name; // Chỉ lấy tên file
+    const absolutePath = path.resolve(__dirname, relativePath);
+    return [fileName, absolutePath]; // Sử dụng tên file làm key
+  })
+);
+
 module.exports = {
   mode: "production",
   target: "node18",
-  entry: {
-    "get-user": "./src/lambda/get-user.ts",
-    "get-upload-status": "./src/lambda/get-upload-status.ts",
-  },
+  entry: entries,
   resolve: { extensions: [".ts", ".js"] },
   module: {
     rules: [
@@ -14,10 +22,16 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, "src/build/lambda"),
-    filename: "[name].mjs",
+    filename: "[name].mjs", // Sử dụng key từ entries làm tên file
     library: { type: "module" },
-    module: true,               // giữ ESM
+    module: true,
   },
   experiments: { outputModule: true },
   externalsType: "node-commonjs",
+  optimization: {
+    minimize: true,
+    splitChunks: false,
+    runtimeChunk: false,
+    concatenateModules: true,
+  },
 };

@@ -28,7 +28,7 @@ export class ApiStack extends Stack {
     const getUserFn = new lambda.Function(this, "GetUserFn", {
       runtime: lambda.Runtime.NODEJS_18_X,
       handler: "get-user.handler",
-      code: lambda.Code.fromAsset("../src/build/lambda"), // folder
+      code: lambda.Code.fromAsset("src/build/lambda"), // folder
       memorySize: 128,
       timeout: Duration.seconds(5),
       environment: {
@@ -40,7 +40,7 @@ export class ApiStack extends Stack {
     const getUploadStatusFn = new lambda.Function(this, "GetUploadStatusFn", {
       runtime: lambda.Runtime.NODEJS_18_X,
       handler: "get-upload-status.handler",
-      code: lambda.Code.fromAsset("../src/build/lambda"),
+      code: lambda.Code.fromAsset("src/build/lambda"),
       memorySize: 128,
       timeout: Duration.seconds(5),
       environment: {
