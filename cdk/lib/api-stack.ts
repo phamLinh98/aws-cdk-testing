@@ -14,7 +14,7 @@ export class ApiStack extends Stack {
 
     //Read secret for HitoEnvSecret
     const hitoEnvSecret = secretsmanager.Secret.fromSecretNameV2(this, 'HitoEnvSecret', 'HitoEnvSecret');
-  
+
     // Create an S3 bucket named linhclass-csv-bucket
     const existingBucket = s3.Bucket.fromBucketName(this, "ExistingLinhclassCsvBucket", "linhclass-csv-bucket");
 
@@ -22,35 +22,42 @@ export class ApiStack extends Stack {
       bucketName: "linhclass-csv-bucket",
       removalPolicy: RemovalPolicy.RETAIN,
       cors: [
-      {
-      allowedOrigins: ["http://localhost:5173"],
-      allowedMethods: [
-      s3.HttpMethods.GET,
-      s3.HttpMethods.POST,
-      s3.HttpMethods.PUT,
-      s3.HttpMethods.DELETE,
-      ],
-      allowedHeaders: [
-      "Content-Type",
-      "X-Amz-Date",
-      "Authorization",
-      "X-Api-Key",
-      "X-Amz-Security-Token",
-      ],
-      exposedHeaders: [],
-      maxAge: 3000,
-      },
+        {
+          allowedOrigins: ["http://localhost:5173"],
+          allowedMethods: [
+            s3.HttpMethods.GET,
+            s3.HttpMethods.POST,
+            s3.HttpMethods.PUT,
+            s3.HttpMethods.DELETE,
+          ],
+          allowedHeaders: [
+            "Content-Type",
+            "X-Amz-Date",
+            "Authorization",
+            "X-Api-Key",
+            "X-Amz-Security-Token",
+          ],
+          exposedHeaders: [],
+          maxAge: 3000,
+        },
       ],
     });
 
     /* DynamoDB tables */
-    const uploadCsvTable = dynamodb.Table.fromTableName(this, "ExistingUploadCsvTable", "upload-csv") || new dynamodb.Table(this, "upload-csv", {
+    const uploadCsvTable = new dynamodb.Table(this, "UploadCsvTable", {
       partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.RETAIN,
       tableName: "upload-csv",
     });
-
+    
+    const usersTable = new dynamodb.Table(this, "UsersTable", {
+      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.RETAIN,
+      tableName: "Users",
+    });
+    
     //Check role IAM 
     const lambdaFullAccessRole = new iam.Role(this, "LinhclassLambdaFullAccessRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
@@ -76,7 +83,7 @@ export class ApiStack extends Stack {
       },
       roleName: `linhclass-lambda-full-access-role-${this.stackName}`,
     });
-    
+
     //Lambda functions
     const getUrlUpdateLambda = new lambda.Function(this, "getUrlUpdateLambda", {
       runtime: lambda.Runtime.NODEJS_18_X,
@@ -97,7 +104,27 @@ export class ApiStack extends Stack {
       functionName: "get-status-from-dynamodb-lambda",
       role: lambdaFullAccessRole,
     });
-    
+
+    const getBatchIdUpdateStatusUploadedLambda = new lambda.Function(this, "getBatchIdUpdateStatusUploadedLambda", {
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: "get-batchid-update-status-to-uploaded.handler",
+      code: lambda.Code.fromAsset("src/rebuild/get-batchid-uploaded"),
+      memorySize: 128,
+      timeout: Duration.seconds(5),
+      functionName: "get-batchid-update-status-to-uploaded-lambda",
+      role: lambdaFullAccessRole,
+    });
+
+    const getCsvReadContentAndInProcessingLambda = new lambda.Function(this, "getCsvReadContentAndInProcessingLambda", {
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: "get-csv-read-detail-update-inprocessing-lambda.handler",
+      code: lambda.Code.fromAsset("src/rebuild/get-csv-read-detail"),
+      memorySize: 128,
+      timeout: Duration.seconds(5),
+      functionName: "get-csv-read-detail-update-inprocessing-lambda",
+      role: lambdaFullAccessRole,
+    });
+
     // Create an SQS queue named linhclass-lambda-call-to-queue
     const lambdaCallQueue = new sqs.Queue(this, "linhclassLambdaCallQueue", {
       queueName: "linhclass-lambda-call-to-queue",
@@ -109,8 +136,16 @@ export class ApiStack extends Stack {
     lambdaCallQueue.grantSendMessages(getUrlUpdateLambda);
 
     /* Grant R/W */
-    uploadCsvTable.grantReadData(getUrlUpdateLambda);
+    uploadCsvTable.grantReadWriteData(getUrlUpdateLambda);
     uploadCsvTable.grantReadWriteData(getUploadStatusLambda);
+    uploadCsvTable.grantReadWriteData(getBatchIdUpdateStatusUploadedLambda);
+    uploadCsvTable.grantReadWriteData(getCsvReadContentAndInProcessingLambda);
+
+
+    usersTable.grantReadWriteData(getUrlUpdateLambda);
+    usersTable.grantReadWriteData(getUploadStatusLambda);
+    usersTable.grantReadWriteData(getBatchIdUpdateStatusUploadedLambda);
+    usersTable.grantReadWriteData(getCsvReadContentAndInProcessingLambda);
 
     /* API Gateway (REST) */
     const api = new apigateway.RestApi(this, "linhclass", {

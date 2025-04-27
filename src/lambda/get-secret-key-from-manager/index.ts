@@ -7,7 +7,7 @@ import {
   const secret_name = "HitoEnvSecret";
   const secretsClient = new SecretsManagerClient({ region: "ap-northeast-1" });
   
- const getSecrets = async () => {
+ export const getSecrets = async () => {
       try {
           const response = await secretsClient.send(
               new GetSecretValueCommand({
