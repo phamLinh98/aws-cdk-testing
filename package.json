@@ -11,7 +11,10 @@
     "synth": "cdk synth --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts' > output/synth.yml",
     "deploy": "cdk deploy --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts'",
     "destroy": "cdk destroy --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts'",
-    "pipline": "npm run build:lambda && npm run synth && npm run deploy"
+    "pipline": "npm run build:lambda && npm run synth && npm run deploy",
+    "bundle-1": "npx esbuild ./src/lambda/create-preurl-s3-update-status-uploading-lambda/index.ts --bundle --platform=node --outfile=./src/rebuild/create-preurl/create-preurl-s3-update-status-uploading-lambda.mjs --format=esm --external:@aws-sdk/client-s3 --external:@aws-sdk/s3-request-presigner --external:@aws-sdk/client-dynamodb --external:@aws-sdk/client-sqs --external:@aws-sdk/client-secrets-manager",
+    "bundle-2": "npx esbuild ./src/lambda/get-status-from-dynamodb-lambda/index.ts --bundle --platform=node --outfile=./src/rebuild/get-status/get-status-from-dynamodb-lambda.mjs --format=esm --external:@aws-sdk/client-s3 --external:@aws-sdk/s3-request-presigner --external:@aws-sdk/client-dynamodb --external:@aws-sdk/client-sqs --external:@aws-sdk/client-secrets-manager",
+    "bundle-esbuild": "npm run bundle-1 && npm run bundle-2"
   },
   "keywords": [],
   "author": "",
@@ -31,6 +34,7 @@
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/client-sqs": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
-    "glob": "^11.0.2"
+    "glob": "^11.0.2",
+    "terser-webpack-plugin": "^5.3.14"
   }
 }

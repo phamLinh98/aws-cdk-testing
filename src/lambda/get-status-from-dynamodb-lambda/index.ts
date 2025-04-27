@@ -1,7 +1,7 @@
 import { connectToDynamoDb, getItemFromDynamoDB } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateDynamoDb";
 import { getSecretOfKey } from "../get-secret-key-from-manager";
 
-export const getStatusHandler = async (event:any) => {
+export const handler = async (event:any) => {
       //Get id from params path
       const getIdFromParams = event.queryStringParameters?.id;
       console.log('getIdFromParams >>>',getIdFromParams);

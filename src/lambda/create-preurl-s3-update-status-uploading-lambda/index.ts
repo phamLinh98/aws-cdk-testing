@@ -2,7 +2,7 @@ import { connectToDynamoDb, createTableInDynamoDB, updateTableInDynamoDB } from 
 import { connectToS3Bucket, createPreUrlUpdateS3 } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateS3";
 import { getSecretOfKey } from "../get-secret-key-from-manager";
 
-export const getUrlHandler = async (event:any) => {
+export const handler = async (event:any) => {
      try {
        // Get the bucket name and table name from Secrets Manager
        const bucketName = await getSecretOfKey('bucketCsvName') as any;
@@ -31,7 +31,7 @@ export const getUrlHandler = async (event:any) => {
        console.log('fileName >>>', fileName);
  
        // Create new Table 'Upload-csv' In DynamoDB
-       await createTableInDynamoDB(dynamoDB, uploadCsvTable);
+       //await createTableInDynamoDB(dynamoDB, uploadCsvTable);
  
        // Update Table 'Upload-csv' In DynamoDB tobe 'Uploading'
        await updateTableInDynamoDB(dynamoDB, uploadCsvTable, fileName, 'Uploading');
