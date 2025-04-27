@@ -26,24 +26,24 @@ export class ApiStack extends Stack {
       bucketName: "linhclass-csv-bucket",
       removalPolicy: RemovalPolicy.RETAIN,
       cors: [
-        {
-          allowedOrigins: ["http://localhost:5173"],
-          allowedMethods: [
-            s3.HttpMethods.GET,
-            s3.HttpMethods.POST,
-            s3.HttpMethods.PUT,
-            s3.HttpMethods.DELETE,
-          ],
-          allowedHeaders: [
-            "Content-Type",
-            "X-Amz-Date",
-            "Authorization",
-            "X-Api-Key",
-            "X-Amz-Security-Token",
-          ],
-          exposedHeaders: [],
-          maxAge: 3000,
-        },
+      {
+        allowedOrigins: ["http://localhost:5173"],
+        allowedMethods: [
+        s3.HttpMethods.GET,
+        s3.HttpMethods.PUT,
+        s3.HttpMethods.POST,
+        s3.HttpMethods.DELETE,
+        s3.HttpMethods.HEAD,
+        ],
+        allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        ],
+        exposedHeaders: [
+        "ETag",
+        ],
+        maxAge: 3000,
+      },
       ],
     });
 
@@ -180,20 +180,50 @@ export class ApiStack extends Stack {
       restApiName: "linhclass",
       deployOptions: { stageName: "prod" },
       defaultCorsPreflightOptions: {
-        allowOrigins: apigateway.Cors.ALL_ORIGINS,
-        allowMethods: apigateway.Cors.ALL_METHODS,
+        allowOrigins: ["http://localhost:5173"],
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowHeaders: [
+          "Content-Type",
+          "X-Amz-Date",
+          "Authorization",
+          "X-Api-Key",
+          "X-Amz-Security-Token",
+        ],
       },
     });
 
     // get-url
     const getUrl = api.root.addResource("get-url");
-    getUrl.addMethod("GET", new apigateway.LambdaIntegration(getUrlUpdateLambda));
+    getUrl.addMethod("GET", new apigateway.LambdaIntegration(getUrlUpdateLambda), {
+      methodResponses: [
+        {
+          statusCode: "200",
+          responseParameters: {
+            "method.response.header.Access-Control-Allow-Origin": true,
+            "method.response.header.Access-Control-Allow-Methods": true,
+            "method.response.header.Access-Control-Allow-Headers": true,
+          },
+        },
+      ],
+    });
 
     //get-status
     const getStatus = api.root.addResource("get-status");
     getStatus.addMethod(
       "GET",
       new apigateway.LambdaIntegration(getUploadStatusLambda),
+      {
+        methodResponses: [
+          {
+            statusCode: "200",
+            responseParameters: {
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Headers": true,
+            },
+          },
+        ],
+      }
     );
 
     hitoEnvSecret.grantRead(getUrlUpdateLambda);
