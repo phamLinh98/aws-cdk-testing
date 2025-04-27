@@ -7,6 +7,10 @@ import * as s3 from "aws-cdk-lib/aws-s3";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
+import { EventType } from "aws-cdk-lib/aws-s3";
+import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
+
 
 export class ApiStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -44,20 +48,23 @@ export class ApiStack extends Stack {
     });
 
     /* DynamoDB tables */
+
+    // Create a DynamoDB table named upload-csv
     const uploadCsvTable = new dynamodb.Table(this, "UploadCsvTable", {
       partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.RETAIN,
       tableName: "upload-csv",
     });
-    
+
+    // Create a DynamoDB table named Users
     const usersTable = new dynamodb.Table(this, "UsersTable", {
       partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.RETAIN,
       tableName: "Users",
     });
-    
+
     //Check role IAM 
     const lambdaFullAccessRole = new iam.Role(this, "LinhclassLambdaFullAccessRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
@@ -132,6 +139,27 @@ export class ApiStack extends Stack {
       retentionPeriod: Duration.days(4),
     });
 
+    // SQS lambdaCallQueue trigger lambda getCsvReadContentAndInProcessingLambda
+    getCsvReadContentAndInProcessingLambda.addEventSource(
+      new SqsEventSource(lambdaCallQueue, {
+        batchSize: 10, // Number of messages to process in a batch
+        enabled: true,
+      })
+    );
+
+    // S3 linhclass-csv-bucket trigger lambda getBatchIdUpdateStatusUploadedLambda
+    csvBucket.addEventNotification(
+      EventType.OBJECT_CREATED,
+      new s3n.LambdaDestination(getBatchIdUpdateStatusUploadedLambda),
+      { suffix: ".csv" } // chỉ trigger nếu file là .csv
+    );
+
+    // Grant permission cho lambda đọc bucket
+    csvBucket.grantRead(getBatchIdUpdateStatusUploadedLambda);
+
+    // Grant permissions for the Lambda function to consume messages from the queue
+    lambdaCallQueue.grantConsumeMessages(getCsvReadContentAndInProcessingLambda);
+
     // Grant permissions for the Lambda function to send messages to the queue
     lambdaCallQueue.grantSendMessages(getUrlUpdateLambda);
 
@@ -172,3 +200,5 @@ export class ApiStack extends Stack {
     hitoEnvSecret.grantRead(getUploadStatusLambda);
   }
 }
+
+
