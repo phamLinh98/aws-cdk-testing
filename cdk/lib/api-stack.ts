@@ -10,6 +10,7 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { EventType } from "aws-cdk-lib/aws-s3";
 import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
+import { execSync } from 'child_process';
 
 
 export class ApiStack extends Stack {
@@ -19,51 +20,68 @@ export class ApiStack extends Stack {
     //Read secret for HitoEnvSecret
     const hitoEnvSecret = secretsmanager.Secret.fromSecretNameV2(this, 'HitoEnvSecret', 'HitoEnvSecret');
 
-    // Create an S3 bucket named linhclass-csv-bucket
-    const existingBucket = s3.Bucket.fromBucketName(this, "ExistingLinhclassCsvBucket", "linhclass-csv-bucket");
-
-    const csvBucket = existingBucket || new s3.Bucket(this, "linhclassCsvBucket", {
-      bucketName: "linhclass-csv-bucket",
-      removalPolicy: RemovalPolicy.RETAIN,
-      cors: [
-      {
-        allowedOrigins: ["http://localhost:5173"],
-        allowedMethods: [
-        s3.HttpMethods.GET,
-        s3.HttpMethods.PUT,
-        s3.HttpMethods.POST,
-        s3.HttpMethods.DELETE,
-        s3.HttpMethods.HEAD,
-        ],
-        allowedHeaders: [
-        "Content-Type",
-        "Authorization",
-        ],
-        exposedHeaders: [
-        "ETag",
-        ],
-        maxAge: 3000,
-      },
-      ],
-    });
+    // Check if the bucket exists, otherwise create it
+    let csvBucket: s3.IBucket;
+    try {
+      csvBucket = s3.Bucket.fromBucketName(this, "ExistingLinhclassCsvBucket", "linhclass-csv-bucket");
+    } catch (error) {
+      if (error instanceof Error && error.name === 'NoSuchBucket') {
+        csvBucket = new s3.Bucket(this, "linhclassCsvBucket", {
+          bucketName: "linhclass-csv-bucket",
+          removalPolicy: RemovalPolicy.RETAIN,
+          cors: [
+            {
+              allowedOrigins: ["http://localhost:5173"],
+              allowedMethods: [
+                s3.HttpMethods.GET,
+                s3.HttpMethods.PUT,
+                s3.HttpMethods.POST,
+                s3.HttpMethods.DELETE,
+                s3.HttpMethods.HEAD,
+              ],
+            },
+          ],
+        });
+      } else {
+        throw error; // Re-throw unexpected errors
+      }
+    }
 
     /* DynamoDB tables */
 
-    // Create a DynamoDB table named upload-csv
-    const uploadCsvTable = new dynamodb.Table(this, "UploadCsvTable", {
-      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: RemovalPolicy.RETAIN,
-      tableName: "upload-csv",
-    });
 
-    // Create a DynamoDB table named Users
-    const usersTable = new dynamodb.Table(this, "UsersTable", {
-      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: RemovalPolicy.RETAIN,
-      tableName: "Users",
-    });
+    const uploadStatusTableName = 'upload-csv';
+    const usersTableName = 'Users';
+    let uploadCsvTable: dynamodb.ITable;
+    let usersTable: dynamodb.ITable;
+
+    try {
+      // nếu describe thành công → bảng đã tồn tại
+      execSync(`aws dynamodb describe-table --table-name ${uploadStatusTableName} --region ${this.region}`, { stdio: 'ignore' });
+      uploadCsvTable = dynamodb.Table.fromTableName(this, 'UploadCsvTable', uploadStatusTableName);
+    } catch {
+      // lỗi describe → bảng chưa có → tạo mới
+      uploadCsvTable = new dynamodb.Table(this, 'UploadCsvTable', {
+        partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        removalPolicy: RemovalPolicy.RETAIN,
+        tableName: uploadStatusTableName,
+      });
+    }
+
+    try {
+      // nếu describe thành công → bảng đã tồn tại
+      execSync(`aws dynamodb describe-table --table-name ${usersTableName} --region ${this.region}`, { stdio: 'ignore' });
+      usersTable = dynamodb.Table.fromTableName(this, 'UsersTable', usersTableName);
+    } catch {
+      // lỗi describe → bảng chưa có → tạo mới
+      usersTable = new dynamodb.Table(this, 'UsersTable', {
+        partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        removalPolicy: RemovalPolicy.RETAIN,
+        tableName: usersTableName,
+      });
+    }
 
     //Check role IAM 
     const lambdaFullAccessRole = new iam.Role(this, "LinhclassLambdaFullAccessRole", {

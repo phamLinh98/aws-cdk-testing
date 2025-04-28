@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 export AWS_PAGER=""
+mkdir -p old-error/
+cp -r error/* old-error/
+rm -rf error/
 mkdir -p error
 
 # ─────────────────────────────────────────────
@@ -73,14 +76,14 @@ else
 fi
 
 # --- CloudFormation ---
-# start_step "Deleting CloudFormation stacks"
-# stacks=$(aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE --output json | jq -r '.StackSummaries[].StackName')
-# if [[ -n "$stacks" ]]; then
-#   for s in $stacks; do safe_run "aws cloudformation delete-stack --stack-name \"$s\" --output json" "cfn-delete"; done
-#   end_step_ok "All CloudFormation stacks deletion triggered."
-# else
-#   end_step_ok "No CloudFormation stacks found."
-# fi
+start_step "Deleting CloudFormation stacks"
+stacks=$(aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE --output json | jq -r '.StackSummaries[].StackName')
+if [[ -n "$stacks" ]]; then
+  for s in $stacks; do safe_run "aws cloudformation delete-stack --stack-name \"$s\" --output json" "cfn-delete"; done
+  end_step_ok "All CloudFormation stacks deletion triggered."
+else
+  end_step_ok "No CloudFormation stacks found."
+fi
 
 # --- API Gateway ---
 start_step "Deleting API Gateway REST APIs"
