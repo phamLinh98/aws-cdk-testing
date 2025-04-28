@@ -1,163 +1,138 @@
 #!/bin/bash
-
 set -euo pipefail
 export AWS_PAGER=""
 
+# ─────────────────────────────────────────────
+# Helper: in-place progress + final success log
+# ─────────────────────────────────────────────
+start_step() { printf "🔸 %s...\r" "$1"; }          # hiển thị 1 dòng, không xuống hàng
+end_step()   { printf "\r\033[K✅ %s\n" "$1"; }     # xoá dòng & in kết quả ✅
+
+# ─────────────────────────────────────────────
 echo "⚡ Starting AWS resource cleanup..."
 
 # --- SQS ---
-echo "🔸 Deleting SQS queues..."
-queues=$(aws sqs list-queues --output json | jq -r '.QueueUrls[]?')
-if [[ -z "$queues" ]]; then
-    echo "✅ No SQS queues found."
+start_step "Deleting SQS queues"
+queues=$(aws sqs list-queues --output json | jq -r '.QueueUrls[]?' )
+if [[ -n "$queues" ]]; then
+  for q in $queues; do aws sqs delete-queue --queue-url "$q" --output json >/dev/null; done
+  end_step "All SQS queues deleted."
 else
-    for queue_url in $queues; do
-        echo "Deleting SQS queue: $queue_url"
-        aws sqs delete-queue --queue-url "$queue_url" --output json
-    done
-    echo "✅ All SQS queues deleted."
+  end_step "No SQS queues found."
 fi
 
 # --- S3 ---
-echo "🔸 Deleting S3 buckets..."
+start_step "Deleting S3 buckets"
 buckets=$(aws s3api list-buckets --output json | jq -r '.Buckets[].Name')
-if [[ -z "$buckets" ]]; then
-    echo "✅ No S3 buckets found."
+if [[ -n "$buckets" ]]; then
+  for b in $buckets; do
+    aws s3 rm "s3://$b" --recursive >/dev/null 2>&1 || true
+    aws s3api delete-bucket --bucket "$b" --output json >/dev/null
+  done
+  end_step "All S3 buckets deleted."
 else
-    for bucket in $buckets; do
-        echo "Emptying and deleting S3 bucket: $bucket"
-        aws s3 rm "s3://$bucket" --recursive || true
-        aws s3api delete-bucket --bucket "$bucket" --output json
-    done
-    echo "✅ All S3 buckets deleted."
+  end_step "No S3 buckets found."
 fi
 
 # --- DynamoDB ---
-echo "🔸 Deleting DynamoDB tables..."
-tables=$(aws dynamodb list-tables --output json | jq -r '.TableNames[]?')
-if [[ -z "$tables" ]]; then
-    echo "✅ No DynamoDB tables found."
+start_step "Deleting DynamoDB tables"
+tables=$(aws dynamodb list-tables --output json | jq -r '.TableNames[]?' )
+if [[ -n "$tables" ]]; then
+  for t in $tables; do aws dynamodb delete-table --table-name "$t" --output json >/dev/null; done
+  end_step "All DynamoDB tables deleted."
 else
-    for table in $tables; do
-        echo "Deleting DynamoDB table: $table"
-        aws dynamodb delete-table --table-name "$table" --output json
-    done
-    echo "✅ All DynamoDB tables deleted."
+  end_step "No DynamoDB tables found."
 fi
 
 # --- Lambda ---
-echo "🔸 Deleting Lambda functions..."
+start_step "Deleting Lambda functions"
 lambdas=$(aws lambda list-functions --output json | jq -r '.Functions[].FunctionName')
-if [[ -z "$lambdas" ]]; then
-    echo "✅ No Lambda functions found."
+if [[ -n "$lambdas" ]]; then
+  for f in $lambdas; do aws lambda delete-function --function-name "$f" --output json >/dev/null; done
+  end_step "All Lambda functions deleted."
 else
-    for function in $lambdas; do
-        echo "Deleting Lambda function: $function"
-        aws lambda delete-function --function-name "$function" --output json
-    done
-    echo "✅ All Lambda functions deleted."
+  end_step "No Lambda functions found."
 fi
 
-# --- CloudFormation Stacks ---
-echo "🔸 Deleting CloudFormation stacks..."
+# --- CloudFormation ---
+start_step "Deleting CloudFormation stacks"
 stacks=$(aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE --output json | jq -r '.StackSummaries[].StackName')
-if [[ -z "$stacks" ]]; then
-    echo "✅ No CloudFormation stacks found."
+if [[ -n "$stacks" ]]; then
+  for s in $stacks; do aws cloudformation delete-stack --stack-name "$s" --output json >/dev/null; done
+  end_step "All CloudFormation stacks deletion triggered."
 else
-    for stack in $stacks; do
-        echo "Deleting CloudFormation stack: $stack"
-        aws cloudformation delete-stack --stack-name "$stack" --output json
-    done
-    echo "✅ All CloudFormation stacks deletion triggered."
+  end_step "No CloudFormation stacks found."
 fi
 
-# --- API Gateway REST APIs ---
-echo "🔸 Deleting API Gateway REST APIs..."
+# --- API Gateway ---
+start_step "Deleting API Gateway REST APIs"
 apis=$(aws apigateway get-rest-apis --output json | jq -r '.items[].id')
-if [[ -z "$apis" ]]; then
-    echo "✅ No API Gateway REST APIs found."
+if [[ -n "$apis" ]]; then
+  for a in $apis; do aws apigateway delete-rest-api --rest-api-id "$a" --output json >/dev/null; done
+  end_step "All API Gateway APIs deleted."
 else
-    for api_id in $apis; do
-        echo "Deleting API Gateway API ID: $api_id"
-        aws apigateway delete-rest-api --rest-api-id "$api_id" --output json
-    done
-    echo "✅ All API Gateway APIs deleted."
+  end_step "No API Gateway REST APIs found."
 fi
 
-# --- IAM Roles and Policies ---
-echo "🔸 Deleting IAM roles and attached policies..."
+# --- IAM Roles ---
+start_step "Deleting IAM roles"
 roles=$(aws iam list-roles --output json | jq -r '.Roles[].RoleName')
-if [[ -z "$roles" ]]; then
-    echo "✅ No IAM roles found."
+if [[ -n "$roles" ]]; then
+  for r in $roles; do
+    [[ "$r" == AWSServiceRoleFor* ]] && continue     # skip service-linked
+    attached=$(aws iam list-attached-role-policies --role-name "$r" --output json | jq -r '.AttachedPolicies[].PolicyArn')
+    for p in $attached; do aws iam detach-role-policy --role-name "$r" --policy-arn "$p" --output json >/dev/null; done
+    aws iam delete-role --role-name "$r" --output json >/dev/null || true
+  done
+  end_step "All IAM roles deleted (service-linked skipped)."
 else
-    for role in $roles; do
-        if [[ "$role" == AWSServiceRoleFor* ]]; then
-            echo "Skipping AWS managed service-linked role: $role"
-            continue
-        fi
-        echo "Detaching policies from role: $role"
-        attached_policies=$(aws iam list-attached-role-policies --role-name "$role" --output json | jq -r '.AttachedPolicies[].PolicyArn')
-        for policy_arn in $attached_policies; do
-            aws iam detach-role-policy --role-name "$role" --policy-arn "$policy_arn" --output json
-        done
-        echo "Deleting role: $role"
-        aws iam delete-role --role-name "$role" --output json || true
-    done
-    echo "✅ All IAM roles deleted."
+  end_step "No IAM roles found."
 fi
 
-# --- EC2 Instances ---
-echo "🔸 Terminating EC2 instances..."
+# --- EC2 ---
+start_step "Terminating EC2 instances"
 instances=$(aws ec2 describe-instances --output json | jq -r '.Reservations[].Instances[].InstanceId')
-if [[ -z "$instances" ]]; then
-    echo "✅ No EC2 instances found."
+if [[ -n "$instances" ]]; then
+  aws ec2 terminate-instances --instance-ids $instances --output json >/dev/null
+  end_step "All EC2 instances termination triggered."
 else
-    aws ec2 terminate-instances --instance-ids $instances --output json
-    echo "✅ All EC2 instances termination triggered."
+  end_step "No EC2 instances found."
 fi
 
-# --- ECS Clusters and Services ---
-echo "🔸 Deleting ECS services and clusters..."
+# --- ECS ---
+start_step "Deleting ECS clusters & services"
 clusters=$(aws ecs list-clusters --output json | jq -r '.clusterArns[]?')
-if [[ -z "$clusters" ]]; then
-    echo "✅ No ECS clusters found."
+if [[ -n "$clusters" ]]; then
+  for c in $clusters; do
+    svcs=$(aws ecs list-services --cluster "$c" --output json | jq -r '.serviceArns[]?')
+    [[ -n "$svcs" ]] && aws ecs delete-service --cluster "$c" --service "$svcs" --force --output json >/dev/null
+    aws ecs delete-cluster --cluster "$c" --output json >/dev/null
+  done
+  end_step "All ECS clusters deleted."
 else
-    for cluster in $clusters; do
-        services=$(aws ecs list-services --cluster "$cluster" --output json | jq -r '.serviceArns[]?')
-        for service in $services; do
-            echo "Deleting ECS service: $service in cluster: $cluster"
-            aws ecs delete-service --cluster "$cluster" --service "$service" --force --output json
-        done
-        echo "Deleting ECS cluster: $cluster"
-        aws ecs delete-cluster --cluster "$cluster" --output json
-    done
-    echo "✅ All ECS clusters deleted."
+  end_step "No ECS clusters found."
 fi
 
-# --- RDS Instances ---
-echo "🔸 Deleting RDS instances..."
-rds_instances=$(aws rds describe-db-instances --output json | jq -r '.DBInstances[].DBInstanceIdentifier')
-if [[ -z "$rds_instances" ]]; then
-    echo "✅ No RDS instances found."
+# --- RDS ---
+start_step "Deleting RDS instances"
+rds=$(aws rds describe-db-instances --output json | jq -r '.DBInstances[].DBInstanceIdentifier')
+if [[ -n "$rds" ]]; then
+  for d in $rds; do
+    aws rds delete-db-instance --db-instance-identifier "$d" --skip-final-snapshot --delete-automated-backups --output json >/dev/null
+  done
+  end_step "All RDS instances deletion triggered."
 else
-    for db in $rds_instances; do
-        echo "Deleting RDS instance: $db"
-        aws rds delete-db-instance --db-instance-identifier "$db" --skip-final-snapshot --delete-automated-backups --output json
-    done
-    echo "✅ All RDS instances deletion triggered."
+  end_step "No RDS instances found."
 fi
 
-# --- CloudWatch Log Groups ---
-echo "🔸 Deleting CloudWatch Log Groups..."
-log_groups=$(aws logs describe-log-groups --output json | jq -r '.logGroups[].logGroupName')
-if [[ -z "$log_groups" ]]; then
-    echo "✅ No CloudWatch log groups found."
+# --- CloudWatch Logs ---
+start_step "Deleting CloudWatch log groups"
+logs=$(aws logs describe-log-groups --output json | jq -r '.logGroups[].logGroupName')
+if [[ -n "$logs" ]]; then
+  for l in $logs; do aws logs delete-log-group --log-group-name "$l" --output json >/dev/null; done
+  end_step "All CloudWatch log groups deleted."
 else
-    for log_group in $log_groups; do
-        echo "Deleting CloudWatch log group: $log_group"
-        aws logs delete-log-group --log-group-name "$log_group" --output json
-    done
-    echo "✅ All CloudWatch log groups deleted."
+  end_step "No CloudWatch log groups found."
 fi
 
-echo "🎉 All specified AWS resources have been cleaned up successfully!"
+echo "🎉 Cleanup completed!"
