@@ -1,0 +1,1 @@
+aws iam create-role-policy \ --role-name GitHubCdkDeploy \ -- assume-role-policy-document file://trust-policy.json 

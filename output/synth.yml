@@ -1,4 +1,79 @@
 Resources:
+  ExistingLinhclassCsvBucketNotificationsB62FD1F8:
+    Type: Custom::S3BucketNotifications
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691
+          - Arn
+      BucketName: linhclass-csv-bucket
+      NotificationConfiguration:
+        LambdaFunctionConfigurations:
+          - Events:
+              - s3:ObjectCreated:*
+            Filter:
+              Key:
+                FilterRules:
+                  - Name: suffix
+                    Value: .csv
+            LambdaFunctionArn:
+              Fn::GetAtt:
+                - getBatchIdUpdateStatusUploadedLambdaE000F12D
+                - Arn
+      Managed: false
+      SkipDestinationValidation: false
+    DependsOn:
+      - ExistingLinhclassCsvBucketAllowBucketNotificationsToServerlessApiStackgetBatchIdUpdateStatusUploadedLambdaCCCE8660D3F8E382
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/ExistingLinhclassCsvBucket/Notifications/Resource
+  ExistingLinhclassCsvBucketAllowBucketNotificationsToServerlessApiStackgetBatchIdUpdateStatusUploadedLambdaCCCE8660D3F8E382:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - getBatchIdUpdateStatusUploadedLambdaE000F12D
+          - Arn
+      Principal: s3.amazonaws.com
+      SourceAccount: "650251698778"
+      SourceArn:
+        Fn::Join:
+          - ""
+          - - "arn:"
+            - Ref: AWS::Partition
+            - :s3:::linhclass-csv-bucket
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/ExistingLinhclassCsvBucket/AllowBucketNotificationsToServerlessApiStackgetBatchIdUpdateStatusUploadedLambdaCCCE8660
+  UploadCsvTable52026CEB:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      TableName: upload-csv
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/UploadCsvTable/Resource
+  UsersTable9725E9C8:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      TableName: Users
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/UsersTable/Resource
   LinhclassLambdaFullAccessRole87C45995:
     Type: AWS::IAM::Role
     Properties:
@@ -54,6 +129,33 @@ Resources:
       PolicyDocument:
         Statement:
           - Action:
+              - sqs:ReceiveMessage
+              - sqs:ChangeMessageVisibility
+              - sqs:GetQueueUrl
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - linhclassLambdaCallQueueA1F3DECD
+                - Arn
+          - Action:
+              - s3:GetObject*
+              - s3:GetBucket*
+              - s3:List*
+            Effect: Allow
+            Resource:
+              - Fn::Join:
+                  - ""
+                  - - "arn:"
+                    - Ref: AWS::Partition
+                    - :s3:::linhclass-csv-bucket
+              - Fn::Join:
+                  - ""
+                  - - "arn:"
+                    - Ref: AWS::Partition
+                    - :s3:::linhclass-csv-bucket/*
+          - Action:
               - sqs:SendMessage
               - sqs:GetQueueAttributes
               - sqs:GetQueueUrl
@@ -77,11 +179,9 @@ Resources:
               - dynamodb:DescribeTable
             Effect: Allow
             Resource:
-              - Fn::Join:
-                  - ""
-                  - - "arn:"
-                    - Ref: AWS::Partition
-                    - :dynamodb:ap-northeast-1:650251698778:table/upload-csv
+              - Fn::GetAtt:
+                  - UploadCsvTable52026CEB
+                  - Arn
               - Ref: AWS::NoValue
           - Action:
               - dynamodb:BatchGetItem
@@ -98,11 +198,9 @@ Resources:
               - dynamodb:DescribeTable
             Effect: Allow
             Resource:
-              - Fn::Join:
-                  - ""
-                  - - "arn:"
-                    - Ref: AWS::Partition
-                    - :dynamodb:ap-northeast-1:650251698778:table/Users
+              - Fn::GetAtt:
+                  - UsersTable9725E9C8
+                  - Arn
               - Ref: AWS::NoValue
           - Action:
               - secretsmanager:GetSecretValue
@@ -212,6 +310,19 @@ Resources:
       aws:asset:path: asset.fbd977ee16227bc1b9c109737b7d304f2b7cec1010ba4ca5ad34c8e5cf9b6a5d
       aws:asset:is-bundled: false
       aws:asset:property: Code
+  getCsvReadContentAndInProcessingLambdaSqsEventSourceServerlessApiStacklinhclassLambdaCallQueueFA7112418812F77A:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 10
+      Enabled: true
+      EventSourceArn:
+        Fn::GetAtt:
+          - linhclassLambdaCallQueueA1F3DECD
+          - Arn
+      FunctionName:
+        Ref: getCsvReadContentAndInProcessingLambdaDCB315DE
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/getCsvReadContentAndInProcessingLambda/SqsEventSource:ServerlessApiStacklinhclassLambdaCallQueueFA711241/Resource
   linhclassLambdaCallQueueA1F3DECD:
     Type: AWS::SQS::Queue
     Properties:
@@ -222,6 +333,169 @@ Resources:
     DeletionPolicy: Delete
     Metadata:
       aws:cdk:path: ServerlessApiStack/linhclassLambdaCallQueue/Resource
+  BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/Resource
+  BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: s3:PutBucketNotification
+            Effect: Allow
+            Resource: "*"
+          - Action: s3:GetBucketNotification
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36
+      Roles:
+        - Ref: BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/DefaultPolicy/Resource
+  BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: AWS CloudFormation handler for "Custom::S3BucketNotifications" resources (@aws-cdk/aws-s3)
+      Code:
+        ZipFile: |-
+          import boto3  # type: ignore
+          import json
+          import logging
+          import urllib.request
+
+          s3 = boto3.client("s3")
+
+          EVENTBRIDGE_CONFIGURATION = 'EventBridgeConfiguration'
+          CONFIGURATION_TYPES = ["TopicConfigurations", "QueueConfigurations", "LambdaFunctionConfigurations"]
+
+          def handler(event: dict, context):
+            response_status = "SUCCESS"
+            error_message = ""
+            try:
+              props = event["ResourceProperties"]
+              notification_configuration = props["NotificationConfiguration"]
+              managed = props.get('Managed', 'true').lower() == 'true'
+              skipDestinationValidation = props.get('SkipDestinationValidation', 'false').lower() == 'true'
+              stack_id = event['StackId']
+              old = event.get("OldResourceProperties", {}).get("NotificationConfiguration", {})
+              if managed:
+                config = handle_managed(event["RequestType"], notification_configuration)
+              else:
+                config = handle_unmanaged(props["BucketName"], stack_id, event["RequestType"], notification_configuration, old)
+              s3.put_bucket_notification_configuration(Bucket=props["BucketName"], NotificationConfiguration=config, SkipDestinationValidation=skipDestinationValidation)
+            except Exception as e:
+              logging.exception("Failed to put bucket notification configuration")
+              response_status = "FAILED"
+              error_message = f"Error: {str(e)}. "
+            finally:
+              submit_response(event, context, response_status, error_message)
+
+          def handle_managed(request_type, notification_configuration):
+            if request_type == 'Delete':
+              return {}
+            return notification_configuration
+
+          def handle_unmanaged(bucket, stack_id, request_type, notification_configuration, old):
+            def get_id(n):
+              n['Id'] = ''
+              sorted_notifications = sort_filter_rules(n)
+              strToHash=json.dumps(sorted_notifications, sort_keys=True).replace('"Name": "prefix"', '"Name": "Prefix"').replace('"Name": "suffix"', '"Name": "Suffix"')
+              return f"{stack_id}-{hash(strToHash)}"
+            def with_id(n):
+              n['Id'] = get_id(n)
+              return n
+
+            external_notifications = {}
+            existing_notifications = s3.get_bucket_notification_configuration(Bucket=bucket)
+            for t in CONFIGURATION_TYPES:
+              if request_type == 'Update':
+                  old_incoming_ids = [get_id(n) for n in old.get(t, [])]
+                  external_notifications[t] = [n for n in existing_notifications.get(t, []) if not get_id(n) in old_incoming_ids]      
+              elif request_type == 'Delete':
+                  external_notifications[t] = [n for n in existing_notifications.get(t, []) if not n['Id'].startswith(f"{stack_id}-")]
+              elif request_type == 'Create':
+                  external_notifications[t] = [n for n in existing_notifications.get(t, [])]
+            if EVENTBRIDGE_CONFIGURATION in existing_notifications:
+              external_notifications[EVENTBRIDGE_CONFIGURATION] = existing_notifications[EVENTBRIDGE_CONFIGURATION]
+
+            if request_type == 'Delete':
+              return external_notifications
+
+            notifications = {}
+            for t in CONFIGURATION_TYPES:
+              external = external_notifications.get(t, [])
+              incoming = [with_id(n) for n in notification_configuration.get(t, [])]
+              notifications[t] = external + incoming
+
+            if EVENTBRIDGE_CONFIGURATION in notification_configuration:
+              notifications[EVENTBRIDGE_CONFIGURATION] = notification_configuration[EVENTBRIDGE_CONFIGURATION]
+            elif EVENTBRIDGE_CONFIGURATION in external_notifications:
+              notifications[EVENTBRIDGE_CONFIGURATION] = external_notifications[EVENTBRIDGE_CONFIGURATION]
+
+            return notifications
+
+          def submit_response(event: dict, context, response_status: str, error_message: str):
+            response_body = json.dumps(
+              {
+                "Status": response_status,
+                "Reason": f"{error_message}See the details in CloudWatch Log Stream: {context.log_stream_name}",
+                "PhysicalResourceId": event.get("PhysicalResourceId") or event["LogicalResourceId"],
+                "StackId": event["StackId"],
+                "RequestId": event["RequestId"],
+                "LogicalResourceId": event["LogicalResourceId"],
+                "NoEcho": False,
+              }
+            ).encode("utf-8")
+            headers = {"content-type": "", "content-length": str(len(response_body))}
+            try:
+              req = urllib.request.Request(url=event["ResponseURL"], headers=headers, data=response_body, method="PUT")
+              with urllib.request.urlopen(req) as response:
+                print(response.read().decode("utf-8"))
+              print("Status code: " + response.reason)
+            except Exception as e:
+                print("send(..) failed executing request.urlopen(..): " + str(e))
+
+          def sort_filter_rules(json_obj):
+            if not isinstance(json_obj, dict):
+                return json_obj
+            for key, value in json_obj.items():
+                if isinstance(value, dict):
+                    json_obj[key] = sort_filter_rules(value)
+                elif isinstance(value, list):
+                    json_obj[key] = [sort_filter_rules(item) for item in value]
+            if "Filter" in json_obj and "Key" in json_obj["Filter"] and "FilterRules" in json_obj["Filter"]["Key"]:
+                filter_rules = json_obj["Filter"]["Key"]["FilterRules"]
+                sorted_filter_rules = sorted(filter_rules, key=lambda x: x["Name"])
+                json_obj["Filter"]["Key"]["FilterRules"] = sorted_filter_rules
+            return json_obj
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC
+          - Arn
+      Runtime: python3.11
+      Timeout: 300
+    DependsOn:
+      - BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36
+      - BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Resource
   linhclassDE87714D:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -261,7 +535,7 @@ Resources:
     DeletionPolicy: Retain
     Metadata:
       aws:cdk:path: ServerlessApiStack/linhclass/Account
-  linhclassDeploymentBB05A3E14652df349ee7cc5beb6d93f9048e2e6d:
+  linhclassDeploymentBB05A3E1f58af101550b8fe02d8cddcdcae7cfbd:
     Type: AWS::ApiGateway::Deployment
     Properties:
       Description: Automatically created by the RestApi construct
@@ -281,7 +555,7 @@ Resources:
     Type: AWS::ApiGateway::Stage
     Properties:
       DeploymentId:
-        Ref: linhclassDeploymentBB05A3E14652df349ee7cc5beb6d93f9048e2e6d
+        Ref: linhclassDeploymentBB05A3E1f58af101550b8fe02d8cddcdcae7cfbd
       RestApiId:
         Ref: linhclassDE87714D
       StageName: prod
@@ -298,9 +572,10 @@ Resources:
       Integration:
         IntegrationResponses:
           - ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'http://localhost:5173'"
+              method.response.header.Vary: "'Origin'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
             StatusCode: "204"
         RequestTemplates:
           application/json: "{ statusCode: 200 }"
@@ -309,6 +584,7 @@ Resources:
         - ResponseParameters:
             method.response.header.Access-Control-Allow-Headers: true
             method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Vary: true
             method.response.header.Access-Control-Allow-Methods: true
           StatusCode: "204"
       ResourceId:
@@ -340,9 +616,10 @@ Resources:
       Integration:
         IntegrationResponses:
           - ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'http://localhost:5173'"
+              method.response.header.Vary: "'Origin'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
             StatusCode: "204"
         RequestTemplates:
           application/json: "{ statusCode: 200 }"
@@ -351,6 +628,7 @@ Resources:
         - ResponseParameters:
             method.response.header.Access-Control-Allow-Headers: true
             method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Vary: true
             method.response.header.Access-Control-Allow-Methods: true
           StatusCode: "204"
       ResourceId:
@@ -417,6 +695,12 @@ Resources:
                   - getUrlUpdateLambda4C6CC445
                   - Arn
               - /invocations
+      MethodResponses:
+        - ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Headers: true
+          StatusCode: "200"
       ResourceId:
         Ref: linhclassgeturlEBD94850
       RestApiId:
@@ -444,9 +728,10 @@ Resources:
       Integration:
         IntegrationResponses:
           - ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'http://localhost:5173'"
+              method.response.header.Vary: "'Origin'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
             StatusCode: "204"
         RequestTemplates:
           application/json: "{ statusCode: 200 }"
@@ -455,6 +740,7 @@ Resources:
         - ResponseParameters:
             method.response.header.Access-Control-Allow-Headers: true
             method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Vary: true
             method.response.header.Access-Control-Allow-Methods: true
           StatusCode: "204"
       ResourceId:
@@ -521,6 +807,12 @@ Resources:
                   - getUploadStatusLambdaD9995D19
                   - Arn
               - /invocations
+      MethodResponses:
+        - ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Headers: true
+          StatusCode: "200"
       ResourceId:
         Ref: linhclassgetstatus8E3BCEEB
       RestApiId:
@@ -530,7 +822,7 @@ Resources:
   CDKMetadata:
     Type: AWS::CDK::Metadata
     Properties:
-      Analytics: v2:deflate64:H4sIAAAAAAAA/02QT2+DMAzFP0vvwaN0lx3ppt2mdXT3ygSvTQkJw84QQnz3KWF/eno/+8l+cQrYPuSQb3DkTDdtZk0N81FQt6oi9mHQpHDk08w72AfdkuyRSTWTw843NbxjbSm1DHYwV96SevxwSQ/eGj3FcqVFWezqBmF+Dk6L8S56t3ygoTPMxrtF8e6EzCQMZRTFnwzzW6CQAhIsCntzRqERJ5grYil7k+L/sdTaByfqiXrrp46cxO5NdRQ8p5Ur/F6dbnohufgmmj/09ydrSOJlUemFcd64c7Reg/RBFuV8Q3Dlu6+igO095JsrG5MNwYnpCKpVvwGpE1WmgwEAAA==
+      Analytics: v2:deflate64:H4sIAAAAAAAA/2WQzW7CMBCEn4W72fLTS49A2xsqDb2jjbMEQ2Kn7BoUWX73yg6lSD3Nt7P22JoZTF8mMBnhlce6Oo0bU0LYCuqTKoidP2tSeOVd4DksvT6RLJFJNdiWFUJY7e2Gzq1hNs6qd2+1JFjt7Z3fLmRlm5PW2HXG1mn9342q6i22riohfGHZUDqWISqDLYTCDV7WjWuM7tM4UFQ83yEzCcMiieJvhvDpyedLGaLCztQodMUeQkEsi87kyD9caO28FfVKXeP6lqwk92HaCtY5coDflnIta5KDq9LyRvcOh0cyx/g4qfzblHVr5sNL5yUq6yqCIz9dZjOYPsNkdGRjxmdvxbQExaA/vul2378BAAA=
     Metadata:
       aws:cdk:path: ServerlessApiStack/CDKMetadata/Default
 Outputs:
