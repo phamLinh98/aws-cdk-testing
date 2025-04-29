@@ -1,251 +1,162 @@
-import { Duration, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
-import { Construct } from "constructs";
-import * as lambda from "aws-cdk-lib/aws-lambda";
-import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
-import * as apigateway from "aws-cdk-lib/aws-apigateway";
-import * as s3 from "aws-cdk-lib/aws-s3";
-import * as iam from "aws-cdk-lib/aws-iam";
-import * as sqs from "aws-cdk-lib/aws-sqs";
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
-import { EventType } from "aws-cdk-lib/aws-s3";
-import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
-import { execSync } from 'child_process';
+import * as cdk from 'aws-cdk-lib';
+import { Construct } from 'constructs';
 
-
-export class ApiStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+export class ApiStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    //Read secret for HitoEnvSecret
-    const hitoEnvSecret = secretsmanager.Secret.fromSecretNameV2(this, 'HitoEnvSecret', 'HitoEnvSecret');
+    //TODO: create mySecret get from secrets manager name HitoEnvSecret 
+    const mySecret = cdk.aws_secretsmanager.Secret.fromSecretNameV2(this, 'HitoEnvSecret', 'HitoEnvSecret');
 
-    // Check if the bucket exists, otherwise create it
-    let csvBucket: s3.IBucket;
-    try {
-      csvBucket = s3.Bucket.fromBucketName(this, "ExistingLinhclassCsvBucket", "linhclass-csv-bucket");
-    } catch (error) {
-      if (error instanceof Error && error.name === 'NoSuchBucket') {
-        csvBucket = new s3.Bucket(this, "linhclassCsvBucket", {
-          bucketName: "linhclass-csv-bucket",
-          removalPolicy: RemovalPolicy.RETAIN,
-          cors: [
-            {
-              allowedOrigins: ["http://localhost:5173"],
-              allowedMethods: [
-                s3.HttpMethods.GET,
-                s3.HttpMethods.PUT,
-                s3.HttpMethods.POST,
-                s3.HttpMethods.DELETE,
-                s3.HttpMethods.HEAD,
-              ],
-            },
-          ],
-        });
-      } else {
-        throw error; // Re-throw unexpected errors
-      }
-    }
-
-    /* DynamoDB tables */
-
-
-    const uploadStatusTableName = 'upload-csv';
-    const usersTableName = 'Users';
-    let uploadCsvTable: dynamodb.ITable;
-    let usersTable: dynamodb.ITable;
-
-    try {
-      // nếu describe thành công → bảng đã tồn tại
-      execSync(`aws dynamodb describe-table --table-name ${uploadStatusTableName} --region ${this.region}`, { stdio: 'ignore' });
-      uploadCsvTable = dynamodb.Table.fromTableName(this, 'UploadCsvTable', uploadStatusTableName);
-    } catch {
-      // lỗi describe → bảng chưa có → tạo mới
-      uploadCsvTable = new dynamodb.Table(this, 'UploadCsvTable', {
-        partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-        removalPolicy: RemovalPolicy.RETAIN,
-        tableName: uploadStatusTableName,
-      });
-    }
-
-    try {
-      // nếu describe thành công → bảng đã tồn tại
-      execSync(`aws dynamodb describe-table --table-name ${usersTableName} --region ${this.region}`, { stdio: 'ignore' });
-      usersTable = dynamodb.Table.fromTableName(this, 'UsersTable', usersTableName);
-    } catch {
-      // lỗi describe → bảng chưa có → tạo mới
-      usersTable = new dynamodb.Table(this, 'UsersTable', {
-        partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-        removalPolicy: RemovalPolicy.RETAIN,
-        tableName: usersTableName,
-      });
-    }
-
-    //Check role IAM 
-    const lambdaFullAccessRole = new iam.Role(this, "LinhclassLambdaFullAccessRole", {
-      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
-      managedPolicies: [
-        iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"),
-        iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonS3FullAccess"),
-        iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonDynamoDBFullAccess"),
-        iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSQSFullAccess"),
-        iam.ManagedPolicy.fromAwsManagedPolicyName("SecretsManagerReadWrite"),
-      ],
-      inlinePolicies: {
-        AdditionalDynamoDBPermissions: new iam.PolicyDocument({
-          statements: [
-            new iam.PolicyStatement({
-              actions: [
-                "dynamodb:GetShardIterator",
-                "dynamodb:PutItem",
-              ],
-              resources: ["*"],
-            }),
-          ],
-        }),
-      },
-      roleName: `linhclass-lambda-full-access-role-${this.stackName}`,
-    });
-
-    //Lambda functions
-    const getUrlUpdateLambda = new lambda.Function(this, "getUrlUpdateLambda", {
-      runtime: lambda.Runtime.NODEJS_18_X,
-      handler: "create-preurl-s3-update-status-uploading-lambda.handler",
-      code: lambda.Code.fromAsset("src/rebuild/create-preurl"),
-      memorySize: 128,
-      timeout: Duration.seconds(5),
-      functionName: "create-preurl-s3-update-status-uploading-lambda",
-      role: lambdaFullAccessRole,
-    });
-
-    const getUploadStatusLambda = new lambda.Function(this, "getUploadStatusLambda", {
-      runtime: lambda.Runtime.NODEJS_18_X,
-      handler: "get-status-from-dynamodb-lambda.handler",
-      code: lambda.Code.fromAsset("src/rebuild/get-status"),
-      memorySize: 128,
-      timeout: Duration.seconds(5),
-      functionName: "get-status-from-dynamodb-lambda",
-      role: lambdaFullAccessRole,
-    });
-
-    const getBatchIdUpdateStatusUploadedLambda = new lambda.Function(this, "getBatchIdUpdateStatusUploadedLambda", {
-      runtime: lambda.Runtime.NODEJS_18_X,
-      handler: "get-batchid-update-status-to-uploaded.handler",
-      code: lambda.Code.fromAsset("src/rebuild/get-batchid-uploaded"),
-      memorySize: 128,
-      timeout: Duration.seconds(5),
-      functionName: "get-batchid-update-status-to-uploaded-lambda",
-      role: lambdaFullAccessRole,
-    });
-
-    const getCsvReadContentAndInProcessingLambda = new lambda.Function(this, "getCsvReadContentAndInProcessingLambda", {
-      runtime: lambda.Runtime.NODEJS_18_X,
-      handler: "get-csv-read-detail-update-inprocessing-lambda.handler",
-      code: lambda.Code.fromAsset("src/rebuild/get-csv-read-detail"),
-      memorySize: 128,
-      timeout: Duration.seconds(5),
-      functionName: "get-csv-read-detail-update-inprocessing-lambda",
-      role: lambdaFullAccessRole,
-    });
-
-    // Create an SQS queue named linhclass-lambda-call-to-queue
-    const lambdaCallQueue = new sqs.Queue(this, "linhclassLambdaCallQueue", {
-      queueName: "linhclass-lambda-call-to-queue",
-      visibilityTimeout: Duration.seconds(30),
-      retentionPeriod: Duration.days(4),
-    });
-
-    // SQS lambdaCallQueue trigger lambda getCsvReadContentAndInProcessingLambda
-    getCsvReadContentAndInProcessingLambda.addEventSource(
-      new SqsEventSource(lambdaCallQueue, {
-        batchSize: 10, // Number of messages to process in a batch
-        enabled: true,
-      })
-    );
-
-    // S3 linhclass-csv-bucket trigger lambda getBatchIdUpdateStatusUploadedLambda
-    csvBucket.addEventNotification(
-      EventType.OBJECT_CREATED,
-      new s3n.LambdaDestination(getBatchIdUpdateStatusUploadedLambda),
-      { suffix: ".csv" } // chỉ trigger nếu file là .csv
-    );
-
-    // Grant permission cho lambda đọc bucket
-    csvBucket.grantRead(getBatchIdUpdateStatusUploadedLambda);
-
-    // Grant permissions for the Lambda function to consume messages from the queue
-    lambdaCallQueue.grantConsumeMessages(getCsvReadContentAndInProcessingLambda);
-
-    // Grant permissions for the Lambda function to send messages to the queue
-    lambdaCallQueue.grantSendMessages(getUrlUpdateLambda);
-
-    /* Grant R/W */
-    uploadCsvTable.grantReadWriteData(getUrlUpdateLambda);
-    uploadCsvTable.grantReadWriteData(getUploadStatusLambda);
-    uploadCsvTable.grantReadWriteData(getBatchIdUpdateStatusUploadedLambda);
-    uploadCsvTable.grantReadWriteData(getCsvReadContentAndInProcessingLambda);
-
-
-    usersTable.grantReadWriteData(getUrlUpdateLambda);
-    usersTable.grantReadWriteData(getUploadStatusLambda);
-    usersTable.grantReadWriteData(getBatchIdUpdateStatusUploadedLambda);
-    usersTable.grantReadWriteData(getCsvReadContentAndInProcessingLambda);
-
-    /* API Gateway (REST) */
-    const api = new apigateway.RestApi(this, "linhclass", {
-      restApiName: "linhclass",
-      deployOptions: { stageName: "prod" },
-      defaultCorsPreflightOptions: {
-        allowOrigins: ["http://localhost:5173"],
-        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowHeaders: [
-          "Content-Type",
-          "X-Amz-Date",
-          "Authorization",
-          "X-Api-Key",
-          "X-Amz-Security-Token",
-        ],
-      },
-    });
-
-    // get-url
-    const getUrl = api.root.addResource("get-url");
-    getUrl.addMethod("GET", new apigateway.LambdaIntegration(getUrlUpdateLambda), {
-      methodResponses: [
-        {
-          statusCode: "200",
-          responseParameters: {
-            "method.response.header.Access-Control-Allow-Origin": true,
-            "method.response.header.Access-Control-Allow-Methods": true,
-            "method.response.header.Access-Control-Allow-Headers": true,
-          },
-        },
-      ],
-    });
-
-    //get-status
-    const getStatus = api.root.addResource("get-status");
-    getStatus.addMethod(
-      "GET",
-      new apigateway.LambdaIntegration(getUploadStatusLambda),
+    //TODO: create an new bucket name linhclass-csv-bucket with cors policy
+    const bucketCsvS3 = new cdk.aws_s3.Bucket(this, 'LinhClassCsvBucket', {
+      bucketName: 'linhclass-csv-bucket',
+      versioned: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      cors: [
       {
-        methodResponses: [
-          {
-            statusCode: "200",
-            responseParameters: {
-              "method.response.header.Access-Control-Allow-Origin": true,
-              "method.response.header.Access-Control-Allow-Methods": true,
-              "method.response.header.Access-Control-Allow-Headers": true,
-            },
-          },
+        allowedHeaders: [
+        "Content-Type",
+        "Authorization"
         ],
+        allowedMethods: [
+        cdk.aws_s3.HttpMethods.GET,
+        cdk.aws_s3.HttpMethods.PUT,
+        cdk.aws_s3.HttpMethods.POST,
+        cdk.aws_s3.HttpMethods.DELETE,
+        cdk.aws_s3.HttpMethods.HEAD
+        ],
+        allowedOrigins: [
+        "http://localhost:5173"
+        ],
+        exposedHeaders: [
+        "ETag"
+        ]
       }
-    );
+      ]
+    });
 
-    hitoEnvSecret.grantRead(getUrlUpdateLambda);
-    hitoEnvSecret.grantRead(getUploadStatusLambda);
+
+    //TODO: create an new SQS name linhclass-lambda-call-to-queue
+    const queueSQS = new cdk.aws_sqs.Queue(this, 'LinhClassLambdaCallToQueue', {
+      queueName: 'linhclass-lambda-call-to-queue',
+      retentionPeriod: cdk.Duration.days(14),
+    });
+
+    //TODO: create 2 dynamoDB table name Users and upload-csv
+    const usersTable = new cdk.aws_dynamodb.Table(this, 'UsersTable', {
+      tableName: 'Users',
+      partitionKey: { name: 'id', type: cdk.aws_dynamodb.AttributeType.STRING },
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+    const uploadCsvTable = new cdk.aws_dynamodb.Table(this, 'UploadCsvTable', {
+      tableName: 'upload-csv',
+      partitionKey: { name: 'id', type: cdk.aws_dynamodb.AttributeType.STRING },
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    //TODO: create a new lambda function name create-presigned-url-uploading-lambda get source from src/rebuild/create-preurl
+    const createPresignedUrlLambda = new cdk.aws_lambda.Function(this, 'CreatePresignedUrlLambda', {
+      functionName: 'create-presigned-url-uploading-lambda',
+      runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
+      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/create-preurl',{
+        exclude: ["**", "!create-preurl-s3-update-status-uploading-lambda.mjs"],
+      }),
+      handler: 'create-presigned-url-uploading-lambda.handler'
+    });
+
+    //create role for lambda function createPresignedUrlLambda to access s3 and dynamoDB
+    bucketCsvS3.grantReadWrite(createPresignedUrlLambda);
+    usersTable.grantReadWriteData(createPresignedUrlLambda);
+    uploadCsvTable.grantReadWriteData(createPresignedUrlLambda);
+    mySecret.grantRead(createPresignedUrlLambda);
+
+    //TODO: create a new lambda function name get-status-from-dynamodb-lambda get source from src/rebuild/get-status 
+    const getStatusFromDynamoDBLambda = new cdk.aws_lambda.Function(this, 'GetStatusFromDynamoDBLambda', {
+      functionName: 'get-status-from-dynamodb-lambda',
+      runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
+      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/get-status',{
+        exclude: ["**", "!get-status-from-dynamodb-lambda.mjs"],
+      }),
+      handler: 'get-status-from-dynamodb-lambda.handler'
+    });
+
+    // getStatusFromDynamoDBLambda can read and write dynamoDb 
+    usersTable.grantReadWriteData(getStatusFromDynamoDBLambda);
+    bucketCsvS3.grantReadWrite(getStatusFromDynamoDBLambda);
+    uploadCsvTable.grantReadWriteData(getStatusFromDynamoDBLambda);
+    mySecret.grantRead(getStatusFromDynamoDBLambda);
+
+    //TODO: create a new lambda function name get-batchid-update-status-to-uploaded get source from src/rebuild/get-batchid-uploaded
+    const getBatchIdUpdateStatusToUploadedLambda = new cdk.aws_lambda.Function(this, 'GetBatchIdUpdateStatusToUploadedLambda', {
+      functionName: 'get-batchid-update-status-to-uploaded',
+      runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
+      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/get-batchid-uploaded',{
+        exclude: ["**", "!get-batchid-update-status-to-uploaded.mjs"],
+      }),
+      handler: 'get-batchid-update-status-to-uploaded.handler'
+    });
+
+    uploadCsvTable.grantReadWriteData(getBatchIdUpdateStatusToUploadedLambda);
+    usersTable.grantReadWriteData(getBatchIdUpdateStatusToUploadedLambda);
+    bucketCsvS3.grantReadWrite(getBatchIdUpdateStatusToUploadedLambda);
+    mySecret.grantRead(getBatchIdUpdateStatusToUploadedLambda);
+
+    //TODO: create a new lambda function name get-csv-read-detail-update-inprocessing-lambda get source from src/rebuild/get-batchid-uploaded
+    const getCsvReadDetailUpdateInProcessingLambda = new cdk.aws_lambda.Function(this, 'GetCsvReadDetailUpdateInProcessingLambda', {
+      functionName: 'get-csv-read-detail-update-inprocessing-lambda',
+      runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
+      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/get-csv-read-detail',{
+        exclude: ["**", "!get-csv-read-detail-update-inprocessing-lambda.mjs"],
+      }),
+      handler: 'get-csv-read-detail-update-inprocessing-lambda.handler'
+    });
+    uploadCsvTable.grantReadWriteData(getCsvReadDetailUpdateInProcessingLambda);
+    bucketCsvS3.grantReadWrite(getCsvReadDetailUpdateInProcessingLambda);
+    usersTable.grantReadWriteData(getCsvReadDetailUpdateInProcessingLambda);
+    mySecret.grantRead(getCsvReadDetailUpdateInProcessingLambda);
+
+    //TODO: khi sqs queueSQS có message trong queue thì sẽ trigger lambda getCsvReadDetailUpdateInProcessingLambda
+    const queueSQSTrigger = new cdk.aws_lambda_event_sources.SqsEventSource(queueSQS, {
+      batchSize: 10,
+      maxConcurrency: 5,
+    });
+    getCsvReadDetailUpdateInProcessingLambda.addEventSource(queueSQSTrigger);
+
+    // TODO: thiết lập, khi có 1 file csv upload lên s3 bucketCsvS3 thì sẽ trigger lambda getBatchIdUpdateStatusToUploadedLambda
+    const bucketCsvS3Notification = new cdk.aws_lambda_event_sources.S3EventSource(bucketCsvS3, {
+      events: [cdk.aws_s3.EventType.OBJECT_CREATED],
+      filters: [{ suffix: '.csv' }],
+    });
+    getBatchIdUpdateStatusToUploadedLambda.addEventSource(bucketCsvS3Notification);
+
+    //TODO: create apigate way , create API method GET get-url for lambda createPresignedUrlLambda with cors policy
+    const apiPresignURL = new cdk.aws_apigateway.RestApi(this, 'LinhClassApi', {
+      restApiName: 'LinhClassService',
+      description: 'This service serves LinhClass.',
+      defaultCorsPreflightOptions: {
+      allowOrigins: ['http://localhost:5173'],
+      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'X-Amz-Date', 'Authorization', 'X-Api-Key', 'X-Amz-Security-Token'],
+      },
+    });
+
+    const getUrlIntegration = new cdk.aws_apigateway.LambdaIntegration(createPresignedUrlLambda, {
+      requestTemplates: { 'application/json': '{"statusCode": 200}' },
+    });
+
+    // Create a dedicated resource for "get-url"
+    const getUrlResource = apiPresignURL.root.addResource('get-url');
+    getUrlResource.addMethod('GET', getUrlIntegration); // GET /get-url
+
+    //TODO: create API method GET get-status for lambda getStatusFromDynamoDBLambda with cors policy
+    const getStatusIntegration = new cdk.aws_apigateway.LambdaIntegration(getStatusFromDynamoDBLambda, {
+      requestTemplates: { 'application/json': '{"statusCode": 200}' },
+    });
+
+    // Create a dedicated resource for "get-status"
+    const getStatusResource = apiPresignURL.root.addResource('get-status');
+    getStatusResource.addMethod('GET', getStatusIntegration); // GET /get-status
   }
 }
 
