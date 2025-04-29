@@ -62,7 +62,7 @@ export class ApiStack extends cdk.Stack {
       code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/create-preurl',{
         exclude: ["**", "!create-preurl-s3-update-status-uploading-lambda.mjs"],
       }),
-      handler: 'create-presigned-url-uploading-lambda.handler'
+      handler: 'create-preurl-s3-update-status-uploading-lambda.handler'
     });
 
     //create role for lambda function createPresignedUrlLambda to access s3 and dynamoDB
@@ -143,11 +143,28 @@ export class ApiStack extends cdk.Stack {
 
     const getUrlIntegration = new cdk.aws_apigateway.LambdaIntegration(createPresignedUrlLambda, {
       requestTemplates: { 'application/json': '{"statusCode": 200}' },
+      integrationResponses: [
+        {
+          statusCode: '200',
+          responseParameters: {
+            'method.response.header.Access-Control-Allow-Origin': "'http://localhost:5173'",
+          },
+        },
+      ],
     });
 
     // Create a dedicated resource for "get-url"
     const getUrlResource = apiPresignURL.root.addResource('get-url');
-    getUrlResource.addMethod('GET', getUrlIntegration); // GET /get-url
+    getUrlResource.addMethod('GET', getUrlIntegration, {
+      methodResponses: [
+        {
+          statusCode: '200',
+          responseParameters: {
+            'method.response.header.Access-Control-Allow-Origin': true,
+          },
+        },
+      ],
+    }); // GET /get-url
 
     //TODO: create API method GET get-status for lambda getStatusFromDynamoDBLambda with cors policy
     const getStatusIntegration = new cdk.aws_apigateway.LambdaIntegration(getStatusFromDynamoDBLambda, {
@@ -156,7 +173,16 @@ export class ApiStack extends cdk.Stack {
 
     // Create a dedicated resource for "get-status"
     const getStatusResource = apiPresignURL.root.addResource('get-status');
-    getStatusResource.addMethod('GET', getStatusIntegration); // GET /get-status
+    getStatusResource.addMethod('GET', getStatusIntegration, {
+      methodResponses: [
+        {
+          statusCode: '200',
+          responseParameters: {
+            'method.response.header.Access-Control-Allow-Origin': true,
+          },
+        },
+      ],
+    }); // GET /get-status
   }
 }
 
