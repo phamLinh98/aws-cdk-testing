@@ -130,59 +130,31 @@ export class ApiStack extends cdk.Stack {
     });
     getBatchIdUpdateStatusToUploadedLambda.addEventSource(bucketCsvS3Notification);
 
-    //TODO: create apigate way , create API method GET get-url for lambda createPresignedUrlLambda with cors policy
-    const apiPresignURL = new cdk.aws_apigateway.RestApi(this, 'LinhClassApi', {
-      restApiName: 'LinhClassService',
-      description: 'This service serves LinhClass.',
+    // Create an API Gateway
+    const api = new cdk.aws_apigateway.RestApi(this, 'LinhClassApi', {
+      restApiName: 'LinhClassApi',
       defaultCorsPreflightOptions: {
       allowOrigins: ['http://localhost:5173'],
-      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowHeaders: ['Content-Type', 'X-Amz-Date', 'Authorization', 'X-Api-Key', 'X-Amz-Security-Token'],
+      allowMethods: ['GET',"POST", "PUT", "DELETE"],
+      allowHeaders: [
+        'Content-Type',
+        'X-Amz-Date',
+        'Authorization',
+        'X-Api-Key',
+        'X-Amz-Security-Token',
+      ],
       },
     });
 
-    const getUrlIntegration = new cdk.aws_apigateway.LambdaIntegration(createPresignedUrlLambda, {
-      requestTemplates: { 'application/json': '{"statusCode": 200}' },
-      integrationResponses: [
-        {
-          statusCode: '200',
-          responseParameters: {
-            'method.response.header.Access-Control-Allow-Origin': "'http://localhost:5173'",
-          },
-        },
-      ],
-    });
+    // GET get-url endpoint calling createPresignedUrlLambda
+    const getUrlIntegration = new cdk.aws_apigateway.LambdaIntegration(createPresignedUrlLambda);
+    api.root.addResource('get-url').addMethod('GET', getUrlIntegration);
 
-    // Create a dedicated resource for "get-url"
-    const getUrlResource = apiPresignURL.root.addResource('get-url');
-    getUrlResource.addMethod('GET', getUrlIntegration, {
-      methodResponses: [
-        {
-          statusCode: '200',
-          responseParameters: {
-            'method.response.header.Access-Control-Allow-Origin': true,
-          },
-        },
-      ],
-    }); // GET /get-url
+    // GET get-status endpoint calling getStatusFromDynamoDBLambda
+    const getStatusIntegration = new cdk.aws_apigateway.LambdaIntegration(getStatusFromDynamoDBLambda);
+    api.root.addResource('get-status').addMethod('GET', getStatusIntegration);
 
-    //TODO: create API method GET get-status for lambda getStatusFromDynamoDBLambda with cors policy
-    const getStatusIntegration = new cdk.aws_apigateway.LambdaIntegration(getStatusFromDynamoDBLambda, {
-      requestTemplates: { 'application/json': '{"statusCode": 200}' },
-    });
-
-    // Create a dedicated resource for "get-status"
-    const getStatusResource = apiPresignURL.root.addResource('get-status');
-    getStatusResource.addMethod('GET', getStatusIntegration, {
-      methodResponses: [
-        {
-          statusCode: '200',
-          responseParameters: {
-            'method.response.header.Access-Control-Allow-Origin': true,
-          },
-        },
-      ],
-    }); // GET /get-status
+    //createPresignedUrlLambda trả về 1 presigned url api, tôi cần cấp quyền để call được presigned url api
   }
 }
 
