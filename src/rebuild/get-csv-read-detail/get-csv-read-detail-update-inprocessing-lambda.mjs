@@ -318,7 +318,7 @@ var getSecretOfKey = async (key) => {
 // src/lambda/demo/avatar.ts
 var setAvatarDemo = async () => {
   try {
-    const newBucket = "linhclass-avatar-bucket";
+    const newBucket = await getSecretOfKey("bucketAvatar");
     const usersTable = await getSecretOfKey("usersTableName");
     const path = "picture/linh123.jpg";
     const randomSequence = generateRandomSequence(10);

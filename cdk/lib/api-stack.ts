@@ -154,7 +154,8 @@ export class ApiStack extends cdk.Stack {
     const getStatusIntegration = new cdk.aws_apigateway.LambdaIntegration(getStatusFromDynamoDBLambda);
     api.root.addResource('get-status').addMethod('GET', getStatusIntegration);
 
-    //createPresignedUrlLambda trả về 1 presigned url api, tôi cần cấp quyền để call được presigned url api
+    // TODO: trong secret manager có 1 trường secret key apiGateway, tôi muốn lấy Invoke URL trong Stage ApiGateway set làm giá trị secret value cho trường secret key đó 
+    const apiGatewayUrl = api.url;  
   }
 }
 
