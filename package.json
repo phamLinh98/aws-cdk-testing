@@ -22,7 +22,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "devDependencies": {
     "@aws-sdk/client-secrets-manager": "^3.787.0",
     "@types/aws-lambda": "^8.10.149",
