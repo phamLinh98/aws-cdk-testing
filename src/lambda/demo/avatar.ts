@@ -1,6 +1,5 @@
 import { connectToDynamoDb, updateAllRecordsInTableWithAvatar } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateDynamoDb";
 import { connectToS3Bucket, copyItemToNewBucket, createNewBucketS3 } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateS3";
-import { generateRandomSequence } from '../createUUID';
 import { getSecretOfKey } from "../get-secret-key-from-manager";
 
 export const setAvatarDemo = async () => {
@@ -13,7 +12,7 @@ export const setAvatarDemo = async () => {
             await createNewBucketS3(createNewBucket, newBucket);
             const path = "picture/linh123.jpg";
             //TODO: 
-            const randomSequence = generateRandomSequence(10);
+            const randomSequence = '-demo123';
             console.log('Random Sequence:', randomSequence);
             const newImageUrl = `avatar${randomSequence}.jpg`;
 

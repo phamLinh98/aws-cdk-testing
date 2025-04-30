@@ -239,6 +239,26 @@ var getAllContentFromS3Uploaded = async (params, s3) => {
     throw error;
   }
 };
+var createNewBucketS3 = async (s3, bucketDestination) => {
+  try {
+    await s3.send(new HeadBucketCommand({ Bucket: bucketDestination }));
+    console.log(`Bucket ${bucketDestination} already exists.`);
+  } catch (error) {
+    if (error.$metadata?.httpStatusCode === 404) {
+      const createBucketParams = {
+        Bucket: bucketDestination,
+        CreateBucketConfiguration: {
+          LocationConstraint: "ap-northeast-1"
+        }
+      };
+      await s3.send(new CreateBucketCommand(createBucketParams));
+      console.log(`Bucket ${bucketDestination} created successfully.`);
+    } else {
+      console.error("Error creating new bucket S3:", error);
+      throw error;
+    }
+  }
+};
 var copyItemToNewBucket = async (s3, newBucket, newImageUrl, path) => {
   try {
     const params = {
@@ -272,15 +292,6 @@ var removeMessageFromSQS = async (event, queueUrl, sqs) => {
     console.error("Error removing message from SQS:", error);
     throw new Error("Failed to remove message from SQS");
   }
-};
-
-// src/lambda/createUUID.ts
-var generateRandomSequence = (length) => {
-  const sequence = [];
-  for (let i = 0; i < length; i++) {
-    sequence.push(Math.floor(Math.random() * 100));
-  }
-  return sequence;
 };
 
 // src/lambda/get-secret-key-from-manager/index.ts
@@ -320,8 +331,10 @@ var setAvatarDemo = async () => {
   try {
     const newBucket = await getSecretOfKey("bucketAvatar");
     const usersTable = await getSecretOfKey("usersTableName");
+    const createNewBucket = await connectToS3Bucket();
+    await createNewBucketS3(createNewBucket, newBucket);
     const path = "picture/linh123.jpg";
-    const randomSequence = generateRandomSequence(10);
+    const randomSequence = "-demo123";
     console.log("Random Sequence:", randomSequence);
     const newImageUrl = `avatar${randomSequence}.jpg`;
     const s3 = await connectToS3Bucket();
