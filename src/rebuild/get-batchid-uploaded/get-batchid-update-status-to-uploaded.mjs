@@ -1,3 +1,17 @@
+// src/utils/cors.ts
+var addCorsHeaders = (res) => {
+  return {
+    ...res,
+    headers: {
+      ...res.headers,
+      "Access-Control-Allow-Origin": process.env.CORS_ORIGIN || "http://localhost:5173",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Api-Key",
+      "Access-Control-Allow-Methods": "OPTIONS,GET,POST,PUT,DELETE",
+      "Access-Control-Allow-Credentials": "true"
+    }
+  };
+};
+
 // src/lambda/create-update-detele-search-dynamo-sqs-s3/connectAndUpdateDynamoDb.ts
 import { DynamoDBClient, ScanCommand, CreateTableCommand, PutItemCommand, GetItemCommand, ListTablesCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 var connectToDynamoDb = async () => {
@@ -132,10 +146,10 @@ var handler = async (event) => {
     console.log("sqsParams>>>", sqsParams);
     await sendNewMessageToSQS(sqsClient, sqsParams);
     console.log("Message sent to SQS successfully.");
-    return {
+    return addCorsHeaders({
       statusCode: 200,
       body: JSON.stringify({ message: "Message sent to SQS successfully." })
-    };
+    });
   } catch (error) {
     console.error("Error in handler:", error);
     return {

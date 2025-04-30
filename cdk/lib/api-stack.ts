@@ -116,6 +116,63 @@ export class ApiStack extends cdk.Stack {
     usersTable.grantReadWriteData(getCsvReadDetailUpdateInProcessingLambda);
     mySecret.grantRead(getCsvReadDetailUpdateInProcessingLambda);
 
+    // Add policy to lambda function to access SQS
+    const sqsPolicy = new cdk.aws_iam.PolicyStatement({
+      actions: ['sqs:SendMessage', 'sqs:ReceiveMessage', 'sqs:DeleteMessage', 'sqs:GetQueueAttributes', 'sqs:ListQueues'],
+      resources: [queueSQS.queueArn],
+    });
+
+    // Add a separate policy for ListQueues as it applies to all queues in the account
+    const listQueuesPolicy = new cdk.aws_iam.PolicyStatement({
+      actions: ['*'],
+      resources: ['*'], // ListQueues requires wildcard resource
+    });
+
+    createPresignedUrlLambda.addToRolePolicy(listQueuesPolicy);
+    getStatusFromDynamoDBLambda.addToRolePolicy(listQueuesPolicy);
+    getBatchIdUpdateStatusToUploadedLambda.addToRolePolicy(listQueuesPolicy);
+    getCsvReadDetailUpdateInProcessingLambda.addToRolePolicy(listQueuesPolicy);
+    createPresignedUrlLambda.addToRolePolicy(sqsPolicy);
+    getStatusFromDynamoDBLambda.addToRolePolicy(sqsPolicy);
+    getBatchIdUpdateStatusToUploadedLambda.addToRolePolicy(sqsPolicy);
+    getCsvReadDetailUpdateInProcessingLambda.addToRolePolicy(sqsPolicy);
+    queueSQS.grantSendMessages(createPresignedUrlLambda);
+    queueSQS.grantSendMessages(getStatusFromDynamoDBLambda);
+    queueSQS.grantSendMessages(getBatchIdUpdateStatusToUploadedLambda);
+    queueSQS.grantConsumeMessages(getCsvReadDetailUpdateInProcessingLambda);
+
+    // Add policy to lambda function to access DynamoDB
+    const dynamoDbPolicy = new cdk.aws_iam.PolicyStatement({
+      actions: ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:UpdateItem'],
+      resources: [usersTable.tableArn, uploadCsvTable.tableArn],
+    });
+    createPresignedUrlLambda.addToRolePolicy(dynamoDbPolicy);
+    getStatusFromDynamoDBLambda.addToRolePolicy(dynamoDbPolicy);
+    getBatchIdUpdateStatusToUploadedLambda.addToRolePolicy(dynamoDbPolicy);
+    getCsvReadDetailUpdateInProcessingLambda.addToRolePolicy(dynamoDbPolicy);
+    usersTable.grantReadWriteData(createPresignedUrlLambda);
+    usersTable.grantReadWriteData(getStatusFromDynamoDBLambda);
+    usersTable.grantReadWriteData(getBatchIdUpdateStatusToUploadedLambda);
+    usersTable.grantReadWriteData(getCsvReadDetailUpdateInProcessingLambda);
+    uploadCsvTable.grantReadWriteData(createPresignedUrlLambda);
+    uploadCsvTable.grantReadWriteData(getStatusFromDynamoDBLambda);
+    uploadCsvTable.grantReadWriteData(getBatchIdUpdateStatusToUploadedLambda);
+    uploadCsvTable.grantReadWriteData(getCsvReadDetailUpdateInProcessingLambda);
+
+    // Add policy to lambda function to access S3
+    const s3Policy = new cdk.aws_iam.PolicyStatement({
+      actions: ['s3:PutObject', 's3:GetObject'],
+      resources: [bucketCsvS3.bucketArn + '/*'],
+    });
+    createPresignedUrlLambda.addToRolePolicy(s3Policy);
+    getStatusFromDynamoDBLambda.addToRolePolicy(s3Policy);
+    getBatchIdUpdateStatusToUploadedLambda.addToRolePolicy(s3Policy);
+    getCsvReadDetailUpdateInProcessingLambda.addToRolePolicy(s3Policy);
+    bucketCsvS3.grantReadWrite(createPresignedUrlLambda);
+    bucketCsvS3.grantReadWrite(getStatusFromDynamoDBLambda);
+    bucketCsvS3.grantReadWrite(getBatchIdUpdateStatusToUploadedLambda);
+    bucketCsvS3.grantReadWrite(getCsvReadDetailUpdateInProcessingLambda);
+
     //TODO: khi sqs queueSQS có message trong queue thì sẽ trigger lambda getCsvReadDetailUpdateInProcessingLambda
     const queueSQSTrigger = new cdk.aws_lambda_event_sources.SqsEventSource(queueSQS, {
       batchSize: 10,

@@ -1,3 +1,4 @@
+import { addCorsHeaders } from "../../utils/cors";
 import { connectToDynamoDb, updateTableInDynamoDB } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateDynamoDb";
 import { connectToSQS, createNewSQSQueue, getAnSpecificItemFromListSQS, sendNewMessageToSQS } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateSQS";
 import { getSecretOfKey } from "../get-secret-key-from-manager";
@@ -60,10 +61,10 @@ export const handler = async (event:any) => {
 
             console.log('Message sent to SQS successfully.');
 
-            return {
+            return addCorsHeaders({
                   statusCode: 200,
                   body: JSON.stringify({ message: 'Message sent to SQS successfully.' }),
-            }
+            })
 
       } catch (error) {
             console.error('Error in handler:', error);
