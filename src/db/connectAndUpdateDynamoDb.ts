@@ -71,7 +71,6 @@ export const updateTableInDynamoDB = async (dynamoDbClient:any, tableName:any, f
       console.log('tableName', tableName); //upload-csv
       console.log('fileName', fileName); // 
       console.log('status', status)
-      // 1000 line for resolve data before update to DynamoDB
       try {
             const params = {
                     TableName: tableName,

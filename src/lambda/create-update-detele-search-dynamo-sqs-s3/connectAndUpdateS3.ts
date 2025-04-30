@@ -1,12 +1,13 @@
 import { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, HeadBucketCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { addCorsHeaders } from '../../utils/cors';
 
 // S3 configuration
 export const connectToS3Bucket = async () => {
     return new S3Client({ region: 'ap-northeast-1' });
 }
 //Create presigned URL for S3
-export const createPreUrlUpdateS3 = async (s3Client:any, bucketName:any, nameCsvSaveIntoS3Bucket:any, expiration:any, fileName:any) => {
+export const createPreUrlUpdateS3 = async (s3Client: any, bucketName: any, nameCsvSaveIntoS3Bucket: any, expiration: any, fileName: any) => {
     try {
         const command = new PutObjectCommand({
             Bucket: bucketName,
@@ -18,13 +19,13 @@ export const createPreUrlUpdateS3 = async (s3Client:any, bucketName:any, nameCsv
         // Debug 4
         console.log('4. presignedUrl:', presignedUrl);
 
-        return {
+        return addCorsHeaders({
             statusCode: 200,
             body: JSON.stringify({
                 presignedUrl,
                 id: fileName,
             }),
-        };
+        });
     } catch (err) {
         console.error(err);
         return {
@@ -35,7 +36,7 @@ export const createPreUrlUpdateS3 = async (s3Client:any, bucketName:any, nameCsv
 }
 
 // Query Get All Items From CSV and Import To Users Table
-export const getAllContentFromS3Uploaded = async (params:any, s3:any) => {
+export const getAllContentFromS3Uploaded = async (params: any, s3: any) => {
     try {
 
         // Lấy file csv từ S3 với tên bucket và đường dẫn trong S3
@@ -43,10 +44,10 @@ export const getAllContentFromS3Uploaded = async (params:any, s3:any) => {
         const data = await s3.send(command);
 
         //Đọc nội dung csv đã lấy được 
-        const streamToString = (stream:any) =>
+        const streamToString = (stream: any) =>
             new Promise((resolve, reject) => {
                 const chunksData = [] as any;
-                stream.on('data', (chunk:any) => chunksData.push(chunk));
+                stream.on('data', (chunk: any) => chunksData.push(chunk));
                 stream.on('error', reject);
                 stream.on('end', () => resolve(Buffer.concat(chunksData).toString('utf-8')));
             });
@@ -62,7 +63,7 @@ export const getAllContentFromS3Uploaded = async (params:any, s3:any) => {
             const values: string[] = line.split(',');
             const obj: CsvRow = {};
             for (let i = 0; i < headers.length; i++) {
-            obj[headers[i].trim()] = values[i] ? values[i].trim() : null;
+                obj[headers[i].trim()] = values[i] ? values[i].trim() : null;
             }
             return obj;
         });
@@ -77,12 +78,12 @@ export const getAllContentFromS3Uploaded = async (params:any, s3:any) => {
 }
 
 // Checking if bucket not exits will be create new one 
-export const createNewBucketS3 = async (s3:any, bucketDestination:any) => {
+export const createNewBucketS3 = async (s3: any, bucketDestination: any) => {
     try {
         // Check if bucket exists
         await s3.send(new HeadBucketCommand({ Bucket: bucketDestination }));
         console.log(`Bucket ${bucketDestination} already exists.`);
-    } catch (error:any) {
+    } catch (error: any) {
         if (error.$metadata?.httpStatusCode === 404) {
             // Bucket does not exist, create it
             const createBucketParams = {
@@ -101,7 +102,7 @@ export const createNewBucketS3 = async (s3:any, bucketDestination:any) => {
 };
 
 //Copy file from one bucket to another
-export const copyItemToNewBucket = async (s3:any, newBucket:any, newImageUrl:any, path:any) => {
+export const copyItemToNewBucket = async (s3: any, newBucket: any, newImageUrl: any, path: any) => {
     try {
         const params = {
             Bucket: newBucket,

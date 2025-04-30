@@ -1,3 +1,4 @@
+import { getInstanceDynamoDB } from "../../db/config";
 import { connectToDynamoDb, updateTableInDynamoDB } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateDynamoDb";
 import { connectToS3Bucket, createPreUrlUpdateS3 } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateS3";
 import { getSecretOfKey } from "../get-secret-key-from-manager";
@@ -13,7 +14,7 @@ export const handler = async (event:any) => {
        // Connect to the S3 bucket
        const s3Client = await connectToS3Bucket();
  
-       const dynamoDB = await connectToDynamoDb();
+       const dynamoDB = await getInstanceDynamoDB();
  
        console.log('Connect S3 and DB success >>');
  

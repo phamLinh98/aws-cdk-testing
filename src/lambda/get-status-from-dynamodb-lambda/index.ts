@@ -1,3 +1,4 @@
+import { addCorsHeaders } from "../../utils/cors";
 import { connectToDynamoDb, getItemFromDynamoDB } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateDynamoDb";
 import { getSecretOfKey } from "../get-secret-key-from-manager";
 
@@ -20,10 +21,10 @@ export const handler = async (event:any) => {
             console.log('data>>>', data.length);
             console.log('LOG2')
             if (data.length > 0) {
-                  return {
+                  return addCorsHeaders({
                         statusCode: 200,
                         body: JSON.stringify(data[0]),
-                  };
+                  });
             } else {
                   return {
                         statusCode: 404,

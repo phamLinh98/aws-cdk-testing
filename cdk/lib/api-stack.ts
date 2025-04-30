@@ -14,25 +14,25 @@ export class ApiStack extends cdk.Stack {
       versioned: true,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       cors: [
-      {
-        allowedHeaders: [
-        "Content-Type",
-        "Authorization"
-        ],
-        allowedMethods: [
-        cdk.aws_s3.HttpMethods.GET,
-        cdk.aws_s3.HttpMethods.PUT,
-        cdk.aws_s3.HttpMethods.POST,
-        cdk.aws_s3.HttpMethods.DELETE,
-        cdk.aws_s3.HttpMethods.HEAD
-        ],
-        allowedOrigins: [
-        "http://localhost:5173"
-        ],
-        exposedHeaders: [
-        "ETag"
-        ]
-      }
+        {
+          allowedHeaders: [
+            "Content-Type",
+            "Authorization"
+          ],
+          allowedMethods: [
+            cdk.aws_s3.HttpMethods.GET,
+            cdk.aws_s3.HttpMethods.PUT,
+            cdk.aws_s3.HttpMethods.POST,
+            cdk.aws_s3.HttpMethods.DELETE,
+            cdk.aws_s3.HttpMethods.HEAD
+          ],
+          allowedOrigins: [
+            "http://localhost:5173"
+          ],
+          exposedHeaders: [
+            "ETag"
+          ]
+        }
       ]
     });
 
@@ -59,7 +59,7 @@ export class ApiStack extends cdk.Stack {
     const createPresignedUrlLambda = new cdk.aws_lambda.Function(this, 'CreatePresignedUrlLambda', {
       functionName: 'create-presigned-url-uploading-lambda',
       runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
-      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/create-preurl',{
+      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/create-preurl', {
         exclude: ["**", "!create-preurl-s3-update-status-uploading-lambda.mjs"],
       }),
       handler: 'create-preurl-s3-update-status-uploading-lambda.handler'
@@ -75,7 +75,7 @@ export class ApiStack extends cdk.Stack {
     const getStatusFromDynamoDBLambda = new cdk.aws_lambda.Function(this, 'GetStatusFromDynamoDBLambda', {
       functionName: 'get-status-from-dynamodb-lambda',
       runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
-      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/get-status',{
+      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/get-status', {
         exclude: ["**", "!get-status-from-dynamodb-lambda.mjs"],
       }),
       handler: 'get-status-from-dynamodb-lambda.handler'
@@ -91,7 +91,7 @@ export class ApiStack extends cdk.Stack {
     const getBatchIdUpdateStatusToUploadedLambda = new cdk.aws_lambda.Function(this, 'GetBatchIdUpdateStatusToUploadedLambda', {
       functionName: 'get-batchid-update-status-to-uploaded',
       runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
-      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/get-batchid-uploaded',{
+      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/get-batchid-uploaded', {
         exclude: ["**", "!get-batchid-update-status-to-uploaded.mjs"],
       }),
       handler: 'get-batchid-update-status-to-uploaded.handler'
@@ -106,7 +106,7 @@ export class ApiStack extends cdk.Stack {
     const getCsvReadDetailUpdateInProcessingLambda = new cdk.aws_lambda.Function(this, 'GetCsvReadDetailUpdateInProcessingLambda', {
       functionName: 'get-csv-read-detail-update-inprocessing-lambda',
       runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
-      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/get-csv-read-detail',{
+      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/get-csv-read-detail', {
         exclude: ["**", "!get-csv-read-detail-update-inprocessing-lambda.mjs"],
       }),
       handler: 'get-csv-read-detail-update-inprocessing-lambda.handler'
@@ -133,16 +133,12 @@ export class ApiStack extends cdk.Stack {
     // Create an API Gateway
     const api = new cdk.aws_apigateway.RestApi(this, 'LinhClassApi', {
       restApiName: 'LinhClassApi',
+      // enable CORS for the API
       defaultCorsPreflightOptions: {
-      allowOrigins: ['http://localhost:5173'],
-      allowMethods: ['GET',"POST", "PUT", "DELETE"],
-      allowHeaders: [
-        'Content-Type',
-        'X-Amz-Date',
-        'Authorization',
-        'X-Api-Key',
-        'X-Amz-Security-Token',
-      ],
+        allowOrigins: ['http://localhost:5173'],
+        allowMethods: cdk.aws_apigateway.Cors.ALL_METHODS,
+        allowHeaders: ['Content-Type', 'Authorization', 'X-Api-Key'],
+        allowCredentials: true,
       },
     });
 
@@ -155,7 +151,7 @@ export class ApiStack extends cdk.Stack {
     api.root.addResource('get-status').addMethod('GET', getStatusIntegration);
 
     // TODO: trong secret manager có 1 trường secret key apiGateway, tôi muốn lấy Invoke URL trong Stage ApiGateway set làm giá trị secret value cho trường secret key đó 
-    const apiGatewayUrl = api.url;  
+    const apiGatewayUrl = api.url;
   }
 }
 

@@ -4,20 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "create-cdk":"cdk bootstrap aws://650251698778/ap-northeast-1",
+    "create-cdk": "cdk bootstrap aws://650251698778/ap-northeast-1",
     "clean:lambda": "rm -rf src/build/lambda",
     "build:lambda": "npm run clean:lambda && webpack",
     "prebuild": "npm --prefix .. run build:lambda",
     "build": "tsc",
     "synth": "cdk synth --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts' > output/synth.yml",
     "deploy": "cdk deploy --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts'",
-    "destroy": "cdk destroy --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts'",
     "pipline": "npm run build:lambda && npm run synth && npm run deploy",
     "bundle-1": "npx esbuild ./src/lambda/create-preurl-s3-update-status-uploading-lambda/index.ts --bundle --platform=node --outfile=./src/rebuild/create-preurl/create-preurl-s3-update-status-uploading-lambda.mjs --format=esm --external:@aws-sdk/client-s3 --external:@aws-sdk/s3-request-presigner --external:@aws-sdk/client-dynamodb --external:@aws-sdk/client-sqs --external:@aws-sdk/client-secrets-manager",
     "bundle-2": "npx esbuild ./src/lambda/get-status-from-dynamodb-lambda/index.ts --bundle --platform=node --outfile=./src/rebuild/get-status/get-status-from-dynamodb-lambda.mjs --format=esm --external:@aws-sdk/client-s3 --external:@aws-sdk/s3-request-presigner --external:@aws-sdk/client-dynamodb --external:@aws-sdk/client-sqs --external:@aws-sdk/client-secrets-manager",
     "bundle-3": "npx esbuild ./src/lambda/get-batchid-update-status-to-uploaded/index.ts --bundle --platform=node --outfile=./src/rebuild/get-batchid-uploaded/get-batchid-update-status-to-uploaded.mjs --format=esm --external:@aws-sdk/client-s3 --external:@aws-sdk/s3-request-presigner --external:@aws-sdk/client-dynamodb --external:@aws-sdk/client-sqs --external:@aws-sdk/client-secrets-manager",
     "bundle-4": "npx esbuild ./src/lambda/get-csv-read-detail-update-inprocessing-lambda/index.ts --bundle --platform=node --outfile=./src/rebuild/get-csv-read-detail/get-csv-read-detail-update-inprocessing-lambda.mjs --format=esm --external:@aws-sdk/client-s3 --external:@aws-sdk/s3-request-presigner --external:@aws-sdk/client-dynamodb --external:@aws-sdk/client-sqs --external:@aws-sdk/client-secrets-manager",
-    "bundle-esbuild": "npm run bundle-1 && npm run bundle-2 && npm run bundle-3 && npm run bundle-4"
+    "bundle-esbuild": "npm run bundle-1 && npm run bundle-2 && npm run bundle-3 && npm run bundle-4",
+    "destroy": "cdk destroy --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts'"
   },
   "keywords": [],
   "author": "",

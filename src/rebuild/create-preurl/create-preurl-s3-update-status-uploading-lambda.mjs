@@ -1,8 +1,51 @@
-// src/lambda/create-update-detele-search-dynamo-sqs-s3/connectAndUpdateDynamoDb.ts
-import { DynamoDBClient, ScanCommand, CreateTableCommand, PutItemCommand, GetItemCommand, ListTablesCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
+// src/db/config.ts
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+
+// src/db/mocks/get-user-data-mock.ts
+var getUserDataMock = [
+  {
+    id: { S: "1" },
+    name: { S: "John Doe" },
+    age: { N: "30" }
+  },
+  {
+    id: { S: "2" },
+    name: { S: "Jane Doe" },
+    age: { N: "25" }
+  }
+];
+
+// src/db/config.ts
+var dynamoDB;
 var connectToDynamoDb = async () => {
   return new DynamoDBClient({ region: "ap-northeast-1" });
 };
+var connectToDynamoDbOnce = async () => {
+  if (!dynamoDB) {
+    dynamoDB = await connectToDynamoDb();
+  }
+  return dynamoDB;
+};
+var localConnectToDynamoDb = async () => {
+  return {
+    send: async (command) => {
+      console.log("This is mocked DynamoDB local, command:", command);
+      return {
+        Items: getUserDataMock
+      };
+    }
+  };
+};
+var getInstanceDynamoDB = async () => {
+  if (process.env.NODE_ENV === "Debug") {
+    return await localConnectToDynamoDb();
+  } else {
+    return await connectToDynamoDbOnce();
+  }
+};
+
+// src/lambda/create-update-detele-search-dynamo-sqs-s3/connectAndUpdateDynamoDb.ts
+import { DynamoDBClient as DynamoDBClient2, ScanCommand as ScanCommand2, CreateTableCommand as CreateTableCommand2, PutItemCommand as PutItemCommand2, GetItemCommand as GetItemCommand2, ListTablesCommand as ListTablesCommand2, UpdateItemCommand as UpdateItemCommand2 } from "@aws-sdk/client-dynamodb";
 var updateTableInDynamoDB = async (dynamoDbClient, tableName, fileName, status) => {
   console.log("tableName", tableName);
   console.log("fileName", fileName);
@@ -21,7 +64,7 @@ var updateTableInDynamoDB = async (dynamoDbClient, tableName, fileName, status) 
         ":status": { S: status }
       }
     };
-    const updateCommand = new UpdateItemCommand(params);
+    const updateCommand = new UpdateItemCommand2(params);
     await dynamoDbClient.send(updateCommand);
     console.log("Table updated successfully");
   } catch (error) {
@@ -33,6 +76,22 @@ var updateTableInDynamoDB = async (dynamoDbClient, tableName, fileName, status) 
 // src/lambda/create-update-detele-search-dynamo-sqs-s3/connectAndUpdateS3.ts
 import { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, HeadBucketCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+// src/utils/cors.ts
+var addCorsHeaders = (res) => {
+  return {
+    ...res,
+    headers: {
+      ...res.headers,
+      "Access-Control-Allow-Origin": process.env.CORS_ORIGIN || "http://localhost:5173",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Api-Key",
+      "Access-Control-Allow-Methods": "OPTIONS,GET,POST,PUT,DELETE",
+      "Access-Control-Allow-Credentials": "true"
+    }
+  };
+};
+
+// src/lambda/create-update-detele-search-dynamo-sqs-s3/connectAndUpdateS3.ts
 var connectToS3Bucket = async () => {
   return new S3Client({ region: "ap-northeast-1" });
 };
@@ -45,13 +104,13 @@ var createPreUrlUpdateS3 = async (s3Client, bucketName, nameCsvSaveIntoS3Bucket,
     });
     const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: expiration });
     console.log("4. presignedUrl:", presignedUrl);
-    return {
+    return addCorsHeaders({
       statusCode: 200,
       body: JSON.stringify({
         presignedUrl,
         id: fileName
       })
-    };
+    });
   } catch (err) {
     console.error(err);
     return {
@@ -101,7 +160,7 @@ var handler = async (event) => {
     const uploadCsvTable = await getSecretOfKey("uploadCsvTableName");
     console.log("uploadCsvTable >>>", uploadCsvTable);
     const s3Client = await connectToS3Bucket();
-    const dynamoDB = await connectToDynamoDb();
+    const dynamoDB2 = await getInstanceDynamoDB();
     console.log("Connect S3 and DB success >>");
     const generateUUID = () => {
       return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
@@ -112,7 +171,7 @@ var handler = async (event) => {
     };
     const fileName = generateUUID();
     console.log("fileName >>>", fileName);
-    await updateTableInDynamoDB(dynamoDB, uploadCsvTable, fileName, "Uploading");
+    await updateTableInDynamoDB(dynamoDB2, uploadCsvTable, fileName, "Uploading");
     const nameCsvSaveIntoS3Bucket = "csv/" + fileName + ".csv";
     console.log("nameCsvSaveIntoS3Bucket >>>");
     const timeExpired = 3600;
