@@ -51,8 +51,8 @@ export const handler = async (event:any) => {
             const queryUrl = prefixQueueUrl + sqsName;
             console.log('queryUrl>>', queryUrl);
             const sqsParams = {
-                  QueueUrl: queryUrl,
-                  MessageBody: JSON.stringify({ fileId }),
+                  QueueUrl: queryUrl, // chỉ định hàng đợi nào nhận message
+                  MessageBody: JSON.stringify({ fileId }), // nội dung message
             };
 
             console.log('sqsParams>>>', sqsParams);

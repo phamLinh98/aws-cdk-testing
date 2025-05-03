@@ -67,8 +67,10 @@ export class ApiStack extends cdk.Stack {
     //TODO: adding connect role to lambda function to access S3 
     grantServiceAnServiceReadWriteAListService(bucketCsvS3, 'grantReadWrite', listLambdaFunction);
 
-    // Add policy to lambda function to access S3
-    const s3Policy = settingNewPolicy(['s3:PutObject', 's3:GetObject'], [bucketCsvS3.bucketArn + '/*']);
+    // Add policy to Lambda function to access S3 bucket
+    const listS3RoleInIAM = ['s3:PutObject', 's3:GetObject']
+    const s3Arn = [bucketCsvS3.bucketArn + '/*'];
+    const s3Policy = settingNewPolicy(listS3RoleInIAM, s3Arn);
     grantServiceListServiceReadWriteAnService(listLambdaFunction, 'addToRolePolicy', s3Policy);
 
     //TODO: SQS trigger Lambda getCsvReadDetailUpdateInProcessingLambda

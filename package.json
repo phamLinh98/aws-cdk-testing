@@ -5,10 +5,6 @@
   "main": "index.js",
   "scripts": {
     "create-cdk": "cdk bootstrap aws://650251698778/ap-northeast-1",
-    "clean:lambda": "rm -rf src/build/lambda",
-    "build:lambda": "npm run clean:lambda && webpack",
-    "prebuild": "npm --prefix .. run build:lambda",
-    "build": "tsc",
     "synth": "cdk synth --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts' > output/synth.yml",
     "deploy": "cdk deploy --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts'",
     "pipline": "npm run build:lambda && npm run synth && npm run deploy",
