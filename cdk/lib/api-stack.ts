@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import { createNewBucketS3, createNewLambdaFunction, createNewSQS, createNewTableDynamoDB, grantServiceListServiceReadWriteAnService, settingNewPolicy, grantServiceAnServiceReadWriteAListService, settingSqsBatchSizeCurrentcy, settingS3Notification, settingApiGatewayRoleCors, setupApiGatewayForLambdaFn } from './custom-constracts/csv-upload-resources';
 
 export class ApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -9,203 +10,89 @@ export class ApiStack extends cdk.Stack {
     const mySecret = cdk.aws_secretsmanager.Secret.fromSecretNameV2(this, 'HitoEnvSecret', 'HitoEnvSecret');
 
     //TODO: create an new bucket name linhclass-csv-bucket with cors policy
-    const bucketCsvS3 = new cdk.aws_s3.Bucket(this, 'LinhClassCsvBucket', {
-      bucketName: 'linhclass-csv-bucket',
-      versioned: true,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      cors: [
-        {
-          allowedHeaders: [
-            "Content-Type",
-            "Authorization"
-          ],
-          allowedMethods: [
-            cdk.aws_s3.HttpMethods.GET,
-            cdk.aws_s3.HttpMethods.PUT,
-            cdk.aws_s3.HttpMethods.POST,
-            cdk.aws_s3.HttpMethods.DELETE,
-            cdk.aws_s3.HttpMethods.HEAD
-          ],
-          allowedOrigins: [
-            "http://localhost:5173"
-          ],
-          exposedHeaders: [
-            "ETag"
-          ]
-        }
-      ]
-    });
-
+    const bucketCsvS3 = createNewBucketS3(this, 'LinhClassCsvBucket', 'linhclass-csv-bucket');
 
     //TODO: create an new SQS name linhclass-lambda-call-to-queue
-    const queueSQS = new cdk.aws_sqs.Queue(this, 'LinhClassLambdaCallToQueue', {
-      queueName: 'linhclass-lambda-call-to-queue',
-      retentionPeriod: cdk.Duration.days(14),
-    });
+    const queueSQS = createNewSQS(this, 'LinhClassLambdaCallToQueue', 'linhclass-lambda-call-to-queue', 14);
 
     //TODO: create 2 dynamoDB table name Users and upload-csv
-    const usersTable = new cdk.aws_dynamodb.Table(this, 'UsersTable', {
-      tableName: 'Users',
-      partitionKey: { name: 'id', type: cdk.aws_dynamodb.AttributeType.STRING },
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
-    const uploadCsvTable = new cdk.aws_dynamodb.Table(this, 'UploadCsvTable', {
-      tableName: 'upload-csv',
-      partitionKey: { name: 'id', type: cdk.aws_dynamodb.AttributeType.STRING },
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
+    const usersTable = createNewTableDynamoDB(this, 'UsersTable', 'Users');
+    const uploadCsvTable = createNewTableDynamoDB(this, 'UploadCsvTable', 'upload-csv');
 
     //TODO: create a new lambda function name create-presigned-url-uploading-lambda get source from src/rebuild/create-preurl
-    const createPresignedUrlLambda = new cdk.aws_lambda.Function(this, 'CreatePresignedUrlLambda', {
-      functionName: 'create-presigned-url-uploading-lambda',
-      runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
-      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/create-preurl', {
-        exclude: ["**", "!create-preurl-s3-update-status-uploading-lambda.mjs"],
-      }),
-      handler: 'create-preurl-s3-update-status-uploading-lambda.handler'
-    });
+    const createPresignedUrlLambda = createNewLambdaFunction(this, 'CreatePresignedUrlLambda', 'create-presigned-url-uploading-lambda', './src/rebuild/create-preurl', "create-preurl-s3-update-status-uploading-lambda.mjs", 'create-preurl-s3-update-status-uploading-lambda.handler');
 
     //create role for lambda function createPresignedUrlLambda to access s3 and dynamoDB
-    bucketCsvS3.grantReadWrite(createPresignedUrlLambda);
-    usersTable.grantReadWriteData(createPresignedUrlLambda);
-    uploadCsvTable.grantReadWriteData(createPresignedUrlLambda);
-    mySecret.grantRead(createPresignedUrlLambda);
+    const listTableInDynamoDB = [usersTable, uploadCsvTable];
+    grantServiceListServiceReadWriteAnService(listTableInDynamoDB, 'grantReadWriteData', createPresignedUrlLambda);
 
     //TODO: create a new lambda function name get-status-from-dynamodb-lambda get source from src/rebuild/get-status 
-    const getStatusFromDynamoDBLambda = new cdk.aws_lambda.Function(this, 'GetStatusFromDynamoDBLambda', {
-      functionName: 'get-status-from-dynamodb-lambda',
-      runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
-      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/get-status', {
-        exclude: ["**", "!get-status-from-dynamodb-lambda.mjs"],
-      }),
-      handler: 'get-status-from-dynamodb-lambda.handler'
-    });
-
+    const getStatusFromDynamoDBLambda = createNewLambdaFunction(this, 'GetStatusFromDynamoDBLambda', 'get-status-from-dynamodb-lambda', './src/rebuild/get-status', "get-status-from-dynamodb-lambda.mjs", 'get-status-from-dynamodb-lambda.handler');
     // getStatusFromDynamoDBLambda can read and write dynamoDb 
-    usersTable.grantReadWriteData(getStatusFromDynamoDBLambda);
-    bucketCsvS3.grantReadWrite(getStatusFromDynamoDBLambda);
-    uploadCsvTable.grantReadWriteData(getStatusFromDynamoDBLambda);
-    mySecret.grantRead(getStatusFromDynamoDBLambda);
+    grantServiceListServiceReadWriteAnService(listTableInDynamoDB, 'grantReadWriteData', getStatusFromDynamoDBLambda);
 
     //TODO: create a new lambda function name get-batchid-update-status-to-uploaded get source from src/rebuild/get-batchid-uploaded
-    const getBatchIdUpdateStatusToUploadedLambda = new cdk.aws_lambda.Function(this, 'GetBatchIdUpdateStatusToUploadedLambda', {
-      functionName: 'get-batchid-update-status-to-uploaded',
-      runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
-      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/get-batchid-uploaded', {
-        exclude: ["**", "!get-batchid-update-status-to-uploaded.mjs"],
-      }),
-      handler: 'get-batchid-update-status-to-uploaded.handler'
-    });
-
-    uploadCsvTable.grantReadWriteData(getBatchIdUpdateStatusToUploadedLambda);
-    usersTable.grantReadWriteData(getBatchIdUpdateStatusToUploadedLambda);
-    bucketCsvS3.grantReadWrite(getBatchIdUpdateStatusToUploadedLambda);
-    mySecret.grantRead(getBatchIdUpdateStatusToUploadedLambda);
+    const getBatchIdUpdateStatusToUploadedLambda = createNewLambdaFunction(this, 'GetBatchIdUpdateStatusToUploadedLambda', 'get-batchid-update-status-to-uploaded', './src/rebuild/get-batchid-uploaded', "get-batchid-update-status-to-uploaded.mjs", 'get-batchid-update-status-to-uploaded.handler');
+    // getBatchIdUpdateStatusToUploadedLambda can read and write dynamoDb
+    grantServiceListServiceReadWriteAnService(listTableInDynamoDB, 'grantReadWriteData', getBatchIdUpdateStatusToUploadedLambda);
 
     //TODO: create a new lambda function name get-csv-read-detail-update-inprocessing-lambda get source from src/rebuild/get-batchid-uploaded
-    const getCsvReadDetailUpdateInProcessingLambda = new cdk.aws_lambda.Function(this, 'GetCsvReadDetailUpdateInProcessingLambda', {
-      functionName: 'get-csv-read-detail-update-inprocessing-lambda',
-      runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
-      code: cdk.aws_lambda.Code.fromAsset('./src/rebuild/get-csv-read-detail', {
-        exclude: ["**", "!get-csv-read-detail-update-inprocessing-lambda.mjs"],
-      }),
-      handler: 'get-csv-read-detail-update-inprocessing-lambda.handler'
-    });
-    uploadCsvTable.grantReadWriteData(getCsvReadDetailUpdateInProcessingLambda);
-    bucketCsvS3.grantReadWrite(getCsvReadDetailUpdateInProcessingLambda);
-    usersTable.grantReadWriteData(getCsvReadDetailUpdateInProcessingLambda);
-    mySecret.grantRead(getCsvReadDetailUpdateInProcessingLambda);
-
+    const getCsvReadDetailUpdateInProcessingLambda = createNewLambdaFunction(this, 'GetCsvReadDetailUpdateInProcessingLambda', 'get-csv-read-detail-update-inprocessing-lambda', './src/rebuild/get-csv-read-detail', "get-csv-read-detail-update-inprocessing-lambda.mjs", 'get-csv-read-detail-update-inprocessing-lambda.handler');
+    grantServiceListServiceReadWriteAnService(listTableInDynamoDB, 'grantReadWriteData', getCsvReadDetailUpdateInProcessingLambda);
     // Add policy to lambda function to access SQS
-    const sqsPolicy = new cdk.aws_iam.PolicyStatement({
-      actions: ['sqs:SendMessage', 'sqs:ReceiveMessage', 'sqs:DeleteMessage', 'sqs:GetQueueAttributes', 'sqs:ListQueues'],
-      resources: [queueSQS.queueArn],
-    });
+    const listSqsRoleInIAM = ['sqs:SendMessage', 'sqs:ReceiveMessage', 'sqs:DeleteMessage', 'sqs:GetQueueAttributes', 'sqs:ListQueues'];
+    const sqsArn = [queueSQS.queueArn];
+    const sqsPolicy = settingNewPolicy(listSqsRoleInIAM, sqsArn);
 
     // Add a separate policy for ListQueues as it applies to all queues in the account
-    const listQueuesPolicy = new cdk.aws_iam.PolicyStatement({
-      actions: ['*'],
-      resources: ['*'], // ListQueues requires wildcard resource
-    });
+    const sqsListRoleInIAM = ['*'];
+    const listQueuesPolicy = settingNewPolicy(sqsListRoleInIAM, sqsListRoleInIAM);
+    const listLambdaFunction = [createPresignedUrlLambda, getStatusFromDynamoDBLambda, getBatchIdUpdateStatusToUploadedLambda, getCsvReadDetailUpdateInProcessingLambda];
 
-    createPresignedUrlLambda.addToRolePolicy(listQueuesPolicy);
-    getStatusFromDynamoDBLambda.addToRolePolicy(listQueuesPolicy);
-    getBatchIdUpdateStatusToUploadedLambda.addToRolePolicy(listQueuesPolicy);
-    getCsvReadDetailUpdateInProcessingLambda.addToRolePolicy(listQueuesPolicy);
-    createPresignedUrlLambda.addToRolePolicy(sqsPolicy);
-    getStatusFromDynamoDBLambda.addToRolePolicy(sqsPolicy);
-    getBatchIdUpdateStatusToUploadedLambda.addToRolePolicy(sqsPolicy);
-    getCsvReadDetailUpdateInProcessingLambda.addToRolePolicy(sqsPolicy);
-    queueSQS.grantSendMessages(createPresignedUrlLambda);
-    queueSQS.grantSendMessages(getStatusFromDynamoDBLambda);
-    queueSQS.grantSendMessages(getBatchIdUpdateStatusToUploadedLambda);
-    queueSQS.grantConsumeMessages(getCsvReadDetailUpdateInProcessingLambda);
+    grantServiceListServiceReadWriteAnService(listLambdaFunction, 'addToRolePolicy', listQueuesPolicy);
+    grantServiceListServiceReadWriteAnService(listLambdaFunction, 'addToRolePolicy', sqsPolicy);
+    grantServiceAnServiceReadWriteAListService(queueSQS, 'grantSendMessages', listLambdaFunction);
 
     // Add policy to lambda function to access DynamoDB
-    const dynamoDbPolicy = new cdk.aws_iam.PolicyStatement({
-      actions: ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:UpdateItem'],
-      resources: [usersTable.tableArn, uploadCsvTable.tableArn],
-    });
-    createPresignedUrlLambda.addToRolePolicy(dynamoDbPolicy);
-    getStatusFromDynamoDBLambda.addToRolePolicy(dynamoDbPolicy);
-    getBatchIdUpdateStatusToUploadedLambda.addToRolePolicy(dynamoDbPolicy);
-    getCsvReadDetailUpdateInProcessingLambda.addToRolePolicy(dynamoDbPolicy);
-    usersTable.grantReadWriteData(createPresignedUrlLambda);
-    usersTable.grantReadWriteData(getStatusFromDynamoDBLambda);
-    usersTable.grantReadWriteData(getBatchIdUpdateStatusToUploadedLambda);
-    usersTable.grantReadWriteData(getCsvReadDetailUpdateInProcessingLambda);
-    uploadCsvTable.grantReadWriteData(createPresignedUrlLambda);
-    uploadCsvTable.grantReadWriteData(getStatusFromDynamoDBLambda);
-    uploadCsvTable.grantReadWriteData(getBatchIdUpdateStatusToUploadedLambda);
-    uploadCsvTable.grantReadWriteData(getCsvReadDetailUpdateInProcessingLambda);
+    const listDynamoRoleInIAM = ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:UpdateItem'];
+    const dynamoDbArn = [usersTable.tableArn, uploadCsvTable.tableArn];
+    const dynamoDbPolicy = settingNewPolicy(listDynamoRoleInIAM, dynamoDbArn);
+    grantServiceListServiceReadWriteAnService(listLambdaFunction, 'addToRolePolicy', dynamoDbPolicy);
+    grantServiceAnServiceReadWriteAListService(usersTable, 'grantReadWriteData', listLambdaFunction);
+    grantServiceAnServiceReadWriteAListService(uploadCsvTable, 'grantReadWriteData', listLambdaFunction);
+
+
+    //TODO: adding connect role to lambda function to access S3 
+
+    grantServiceAnServiceReadWriteAListService(bucketCsvS3, 'grantReadWrite', listLambdaFunction);
 
     // Add policy to lambda function to access S3
-    const s3Policy = new cdk.aws_iam.PolicyStatement({
-      actions: ['s3:PutObject', 's3:GetObject'],
-      resources: [bucketCsvS3.bucketArn + '/*'],
-    });
-    createPresignedUrlLambda.addToRolePolicy(s3Policy);
-    getStatusFromDynamoDBLambda.addToRolePolicy(s3Policy);
-    getBatchIdUpdateStatusToUploadedLambda.addToRolePolicy(s3Policy);
-    getCsvReadDetailUpdateInProcessingLambda.addToRolePolicy(s3Policy);
-    bucketCsvS3.grantReadWrite(createPresignedUrlLambda);
-    bucketCsvS3.grantReadWrite(getStatusFromDynamoDBLambda);
-    bucketCsvS3.grantReadWrite(getBatchIdUpdateStatusToUploadedLambda);
-    bucketCsvS3.grantReadWrite(getCsvReadDetailUpdateInProcessingLambda);
+    const s3Policy = settingNewPolicy(['s3:PutObject', 's3:GetObject'], [bucketCsvS3.bucketArn + '/*']);
+    grantServiceListServiceReadWriteAnService(listLambdaFunction, 'addToRolePolicy', s3Policy);
 
-    //TODO: khi sqs queueSQS có message trong queue thì sẽ trigger lambda getCsvReadDetailUpdateInProcessingLambda
-    const queueSQSTrigger = new cdk.aws_lambda_event_sources.SqsEventSource(queueSQS, {
-      batchSize: 10,
-      maxConcurrency: 5,
-    });
+    // //TODO: khi sqs queueSQS có message trong queue thì sẽ trigger lambda getCsvReadDetailUpdateInProcessingLambda
+    // //SQS trigger Lambda getCsvReadDetailUpdateInProcessingLambda
+    const queueSQSTrigger = settingSqsBatchSizeCurrentcy(queueSQS, 10, 5);
     getCsvReadDetailUpdateInProcessingLambda.addEventSource(queueSQSTrigger);
 
-    // TODO: thiết lập, khi có 1 file csv upload lên s3 bucketCsvS3 thì sẽ trigger lambda getBatchIdUpdateStatusToUploadedLambda
-    const bucketCsvS3Notification = new cdk.aws_lambda_event_sources.S3EventSource(bucketCsvS3, {
-      events: [cdk.aws_s3.EventType.OBJECT_CREATED],
-      filters: [{ suffix: '.csv' }],
-    });
+    // // TODO: thiết lập, khi có 1 file csv upload lên s3 bucketCsvS3 thì sẽ trigger lambda getBatchIdUpdateStatusToUploadedLambda
+    // //S3 trigger Lambda getBatchIdUpdateStatusToUploadedLambda
+    const bucketCsvS3Notification = settingS3Notification(bucketCsvS3, '.csv');
     getBatchIdUpdateStatusToUploadedLambda.addEventSource(bucketCsvS3Notification);
 
-    // Create an API Gateway
-    const api = new cdk.aws_apigateway.RestApi(this, 'LinhClassApi', {
-      restApiName: 'LinhClassApi',
-      // enable CORS for the API
-      defaultCorsPreflightOptions: {
-        allowOrigins: ['http://localhost:5173'],
-        allowMethods: cdk.aws_apigateway.Cors.ALL_METHODS,
-        allowHeaders: ['Content-Type', 'Authorization', 'X-Api-Key'],
-        allowCredentials: true,
-      },
-    });
+    // // Create an API Gateway
+    const apiGatewaySetting = settingApiGatewayRoleCors(this, 'LinhClassApiGateway');
 
     // GET get-url endpoint calling createPresignedUrlLambda
-    const getUrlIntegration = new cdk.aws_apigateway.LambdaIntegration(createPresignedUrlLambda);
-    api.root.addResource('get-url').addMethod('GET', getUrlIntegration);
+    const getUrlIntegration = setupApiGatewayForLambdaFn(createPresignedUrlLambda);
+    apiGatewaySetting.root.addResource('get-url').addMethod('GET', getUrlIntegration);
 
     // GET get-status endpoint calling getStatusFromDynamoDBLambda
-    const getStatusIntegration = new cdk.aws_apigateway.LambdaIntegration(getStatusFromDynamoDBLambda);
-    api.root.addResource('get-status').addMethod('GET', getStatusIntegration);
+    const getStatusIntegration = setupApiGatewayForLambdaFn(getStatusFromDynamoDBLambda);
+    apiGatewaySetting.root.addResource('get-status').addMethod('GET', getStatusIntegration);
+
+    //TODO setting for secretManager for all lambda function
+    grantServiceAnServiceReadWriteAListService(mySecret, 'grantRead', listLambdaFunction);
   }
 }
 

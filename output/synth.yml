@@ -135,28 +135,6 @@ Resources:
       PolicyDocument:
         Statement:
           - Action:
-              - s3:GetObject*
-              - s3:GetBucket*
-              - s3:List*
-              - s3:DeleteObject*
-              - s3:PutObject
-              - s3:PutObjectLegalHold
-              - s3:PutObjectRetention
-              - s3:PutObjectTagging
-              - s3:PutObjectVersionTagging
-              - s3:Abort*
-            Effect: Allow
-            Resource:
-              - Fn::GetAtt:
-                  - LinhClassCsvBucket8A50560C
-                  - Arn
-              - Fn::Join:
-                  - ""
-                  - - Fn::GetAtt:
-                        - LinhClassCsvBucket8A50560C
-                        - Arn
-                    - /*
-          - Action:
               - dynamodb:BatchGetItem
               - dynamodb:GetRecords
               - dynamodb:GetShardIterator
@@ -194,6 +172,74 @@ Resources:
                   - UploadCsvTable52026CEB
                   - Arn
               - Ref: AWS::NoValue
+          - Action: "*"
+            Effect: Allow
+            Resource: "*"
+          - Action:
+              - sqs:SendMessage
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:ListQueues
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassLambdaCallToQueueFD2281BE
+                - Arn
+          - Action:
+              - sqs:SendMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassLambdaCallToQueueFD2281BE
+                - Arn
+          - Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - UsersTable9725E9C8
+                  - Arn
+              - Fn::GetAtt:
+                  - UploadCsvTable52026CEB
+                  - Arn
+          - Action:
+              - s3:GetObject*
+              - s3:GetBucket*
+              - s3:List*
+              - s3:DeleteObject*
+              - s3:PutObject
+              - s3:PutObjectLegalHold
+              - s3:PutObjectRetention
+              - s3:PutObjectTagging
+              - s3:PutObjectVersionTagging
+              - s3:Abort*
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - LinhClassCsvBucket8A50560C
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - LinhClassCsvBucket8A50560C
+                        - Arn
+                    - /*
+          - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassCsvBucket8A50560C
+                      - Arn
+                  - /*
           - Action:
               - secretsmanager:GetSecretValue
               - secretsmanager:DescribeSecret
@@ -215,7 +261,7 @@ Resources:
     Properties:
       Code:
         S3Bucket: cdk-hnb659fds-assets-650251698778-ap-northeast-1
-        S3Key: 6092f75bbc52535a1a3a5322371591d616bd083684c4a3c4c6071189b8e2278e.zip
+        S3Key: 7b96759025793d325a64ac08b1990e800a14ff5880b4ec7404ca5d87a6c0b925.zip
       FunctionName: create-presigned-url-uploading-lambda
       Handler: create-preurl-s3-update-status-uploading-lambda.handler
       Role:
@@ -228,7 +274,7 @@ Resources:
       - CreatePresignedUrlLambdaServiceRole1ADF6B6B
     Metadata:
       aws:cdk:path: ServerlessApiStack/CreatePresignedUrlLambda/Resource
-      aws:asset:path: asset.6092f75bbc52535a1a3a5322371591d616bd083684c4a3c4c6071189b8e2278e
+      aws:asset:path: asset.7b96759025793d325a64ac08b1990e800a14ff5880b4ec7404ca5d87a6c0b925
       aws:asset:is-bundled: false
       aws:asset:property: Code
   GetStatusFromDynamoDBLambdaServiceRoleFC5E26C1:
@@ -274,6 +320,60 @@ Resources:
                   - Arn
               - Ref: AWS::NoValue
           - Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+              - dynamodb:ConditionCheckItem
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              - dynamodb:DescribeTable
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - UploadCsvTable52026CEB
+                  - Arn
+              - Ref: AWS::NoValue
+          - Action: "*"
+            Effect: Allow
+            Resource: "*"
+          - Action:
+              - sqs:SendMessage
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:ListQueues
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassLambdaCallToQueueFD2281BE
+                - Arn
+          - Action:
+              - sqs:SendMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassLambdaCallToQueueFD2281BE
+                - Arn
+          - Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - UsersTable9725E9C8
+                  - Arn
+              - Fn::GetAtt:
+                  - UploadCsvTable52026CEB
+                  - Arn
+          - Action:
               - s3:GetObject*
               - s3:GetBucket*
               - s3:List*
@@ -296,24 +396,16 @@ Resources:
                         - Arn
                     - /*
           - Action:
-              - dynamodb:BatchGetItem
-              - dynamodb:GetRecords
-              - dynamodb:GetShardIterator
-              - dynamodb:Query
-              - dynamodb:GetItem
-              - dynamodb:Scan
-              - dynamodb:ConditionCheckItem
-              - dynamodb:BatchWriteItem
-              - dynamodb:PutItem
-              - dynamodb:UpdateItem
-              - dynamodb:DeleteItem
-              - dynamodb:DescribeTable
+              - s3:PutObject
+              - s3:GetObject
             Effect: Allow
             Resource:
-              - Fn::GetAtt:
-                  - UploadCsvTable52026CEB
-                  - Arn
-              - Ref: AWS::NoValue
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassCsvBucket8A50560C
+                      - Arn
+                  - /*
           - Action:
               - secretsmanager:GetSecretValue
               - secretsmanager:DescribeSecret
@@ -335,7 +427,7 @@ Resources:
     Properties:
       Code:
         S3Bucket: cdk-hnb659fds-assets-650251698778-ap-northeast-1
-        S3Key: 8333447034dc33d685fd735f9e2bdd389bc821cac28983fed2f7540d1a0d2bb8.zip
+        S3Key: 633f507b34e9f8c82ec287f20c04ad683f7f4182f1c315c98175b57ff4dba088.zip
       FunctionName: get-status-from-dynamodb-lambda
       Handler: get-status-from-dynamodb-lambda.handler
       Role:
@@ -348,7 +440,7 @@ Resources:
       - GetStatusFromDynamoDBLambdaServiceRoleFC5E26C1
     Metadata:
       aws:cdk:path: ServerlessApiStack/GetStatusFromDynamoDBLambda/Resource
-      aws:asset:path: asset.8333447034dc33d685fd735f9e2bdd389bc821cac28983fed2f7540d1a0d2bb8
+      aws:asset:path: asset.633f507b34e9f8c82ec287f20c04ad683f7f4182f1c315c98175b57ff4dba088
       aws:asset:is-bundled: false
       aws:asset:property: Code
   GetBatchIdUpdateStatusToUploadedLambdaServiceRoleA9EC421A:
@@ -390,7 +482,7 @@ Resources:
             Effect: Allow
             Resource:
               - Fn::GetAtt:
-                  - UploadCsvTable52026CEB
+                  - UsersTable9725E9C8
                   - Arn
               - Ref: AWS::NoValue
           - Action:
@@ -409,9 +501,44 @@ Resources:
             Effect: Allow
             Resource:
               - Fn::GetAtt:
-                  - UsersTable9725E9C8
+                  - UploadCsvTable52026CEB
                   - Arn
               - Ref: AWS::NoValue
+          - Action: "*"
+            Effect: Allow
+            Resource: "*"
+          - Action:
+              - sqs:SendMessage
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:ListQueues
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassLambdaCallToQueueFD2281BE
+                - Arn
+          - Action:
+              - sqs:SendMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassLambdaCallToQueueFD2281BE
+                - Arn
+          - Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - UsersTable9725E9C8
+                  - Arn
+              - Fn::GetAtt:
+                  - UploadCsvTable52026CEB
+                  - Arn
           - Action:
               - s3:GetObject*
               - s3:GetBucket*
@@ -435,6 +562,17 @@ Resources:
                         - Arn
                     - /*
           - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassCsvBucket8A50560C
+                      - Arn
+                  - /*
+          - Action:
               - secretsmanager:GetSecretValue
               - secretsmanager:DescribeSecret
             Effect: Allow
@@ -455,7 +593,7 @@ Resources:
     Properties:
       Code:
         S3Bucket: cdk-hnb659fds-assets-650251698778-ap-northeast-1
-        S3Key: 705a1a23e784fdb6d55ba6f7b21b646460b5a66257a4f00ec4a8ffb1e3be79d4.zip
+        S3Key: c5a39f6a8d53cc81d94853f5ea4538d44b7029ea750d195cd600818333f5fc7d.zip
       FunctionName: get-batchid-update-status-to-uploaded
       Handler: get-batchid-update-status-to-uploaded.handler
       Role:
@@ -468,7 +606,7 @@ Resources:
       - GetBatchIdUpdateStatusToUploadedLambdaServiceRoleA9EC421A
     Metadata:
       aws:cdk:path: ServerlessApiStack/GetBatchIdUpdateStatusToUploadedLambda/Resource
-      aws:asset:path: asset.705a1a23e784fdb6d55ba6f7b21b646460b5a66257a4f00ec4a8ffb1e3be79d4
+      aws:asset:path: asset.c5a39f6a8d53cc81d94853f5ea4538d44b7029ea750d195cd600818333f5fc7d
       aws:asset:is-bundled: false
       aws:asset:property: Code
   GetCsvReadDetailUpdateInProcessingLambdaServiceRoleFF04FF36:
@@ -510,9 +648,63 @@ Resources:
             Effect: Allow
             Resource:
               - Fn::GetAtt:
+                  - UsersTable9725E9C8
+                  - Arn
+              - Ref: AWS::NoValue
+          - Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+              - dynamodb:ConditionCheckItem
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              - dynamodb:DescribeTable
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
                   - UploadCsvTable52026CEB
                   - Arn
               - Ref: AWS::NoValue
+          - Action: "*"
+            Effect: Allow
+            Resource: "*"
+          - Action:
+              - sqs:SendMessage
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:ListQueues
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassLambdaCallToQueueFD2281BE
+                - Arn
+          - Action:
+              - sqs:SendMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassLambdaCallToQueueFD2281BE
+                - Arn
+          - Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - UsersTable9725E9C8
+                  - Arn
+              - Fn::GetAtt:
+                  - UploadCsvTable52026CEB
+                  - Arn
           - Action:
               - s3:GetObject*
               - s3:GetBucket*
@@ -536,34 +728,16 @@ Resources:
                         - Arn
                     - /*
           - Action:
-              - dynamodb:BatchGetItem
-              - dynamodb:GetRecords
-              - dynamodb:GetShardIterator
-              - dynamodb:Query
-              - dynamodb:GetItem
-              - dynamodb:Scan
-              - dynamodb:ConditionCheckItem
-              - dynamodb:BatchWriteItem
-              - dynamodb:PutItem
-              - dynamodb:UpdateItem
-              - dynamodb:DeleteItem
-              - dynamodb:DescribeTable
-            Effect: Allow
-            Resource:
-              - Fn::GetAtt:
-                  - UsersTable9725E9C8
-                  - Arn
-              - Ref: AWS::NoValue
-          - Action:
-              - secretsmanager:GetSecretValue
-              - secretsmanager:DescribeSecret
+              - s3:PutObject
+              - s3:GetObject
             Effect: Allow
             Resource:
               Fn::Join:
                 - ""
-                - - "arn:"
-                  - Ref: AWS::Partition
-                  - :secretsmanager:ap-northeast-1:650251698778:secret:HitoEnvSecret-??????
+                - - Fn::GetAtt:
+                      - LinhClassCsvBucket8A50560C
+                      - Arn
+                  - /*
           - Action:
               - sqs:ReceiveMessage
               - sqs:ChangeMessageVisibility
@@ -575,6 +749,16 @@ Resources:
               Fn::GetAtt:
                 - LinhClassLambdaCallToQueueFD2281BE
                 - Arn
+          - Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - :secretsmanager:ap-northeast-1:650251698778:secret:HitoEnvSecret-??????
         Version: "2012-10-17"
       PolicyName: GetCsvReadDetailUpdateInProcessingLambdaServiceRoleDefaultPolicy43701133
       Roles:
@@ -586,7 +770,7 @@ Resources:
     Properties:
       Code:
         S3Bucket: cdk-hnb659fds-assets-650251698778-ap-northeast-1
-        S3Key: 86d693b765d58ae7631f07f76dd4b4805951fbb91bd7e764e0214fe40baf5a95.zip
+        S3Key: 34dbacff2e3f8934138a96798141e5cda3dac04806cde02db65495b5eb02e012.zip
       FunctionName: get-csv-read-detail-update-inprocessing-lambda
       Handler: get-csv-read-detail-update-inprocessing-lambda.handler
       Role:
@@ -599,7 +783,7 @@ Resources:
       - GetCsvReadDetailUpdateInProcessingLambdaServiceRoleFF04FF36
     Metadata:
       aws:cdk:path: ServerlessApiStack/GetCsvReadDetailUpdateInProcessingLambda/Resource
-      aws:asset:path: asset.86d693b765d58ae7631f07f76dd4b4805951fbb91bd7e764e0214fe40baf5a95
+      aws:asset:path: asset.34dbacff2e3f8934138a96798141e5cda3dac04806cde02db65495b5eb02e012
       aws:asset:is-bundled: false
       aws:asset:property: Code
   GetCsvReadDetailUpdateInProcessingLambdaSqsEventSourceServerlessApiStackLinhClassLambdaCallToQueue52FD85AE2793E404:
@@ -776,13 +960,13 @@ Resources:
       - BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC
     Metadata:
       aws:cdk:path: ServerlessApiStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Resource
-  LinhClassApi8E043DC2:
+  LinhClassApiGateway057CB1D3:
     Type: AWS::ApiGateway::RestApi
     Properties:
-      Name: LinhClassApi
+      Name: LinhClassApiGateway
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Resource
-  LinhClassApiCloudWatchRole1ECFAF2D:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Resource
+  LinhClassApiGatewayCloudWatchRole6A61E99C:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -801,49 +985,49 @@ Resources:
     UpdateReplacePolicy: Retain
     DeletionPolicy: Retain
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/CloudWatchRole/Resource
-  LinhClassApiAccount45521E59:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/CloudWatchRole/Resource
+  LinhClassApiGatewayAccount605ABB94:
     Type: AWS::ApiGateway::Account
     Properties:
       CloudWatchRoleArn:
         Fn::GetAtt:
-          - LinhClassApiCloudWatchRole1ECFAF2D
+          - LinhClassApiGatewayCloudWatchRole6A61E99C
           - Arn
     DependsOn:
-      - LinhClassApi8E043DC2
+      - LinhClassApiGateway057CB1D3
     UpdateReplacePolicy: Retain
     DeletionPolicy: Retain
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Account
-  LinhClassApiDeployment7589AB6Cb5ad04b0708ddd0bad8a7b7c40e5f7b5:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Account
+  LinhClassApiGatewayDeploymentF983CC0A5ac78d74cf41ede7abbd7afde3fe6c12:
     Type: AWS::ApiGateway::Deployment
     Properties:
       Description: Automatically created by the RestApi construct
       RestApiId:
-        Ref: LinhClassApi8E043DC2
+        Ref: LinhClassApiGateway057CB1D3
     DependsOn:
-      - LinhClassApigetstatusGETB669B13A
-      - LinhClassApigetstatusOPTIONS82B4275B
-      - LinhClassApigetstatusDCEAD9F8
-      - LinhClassApigeturlGET8F4977EA
-      - LinhClassApigeturlOPTIONS42185609
-      - LinhClassApigeturlFFBF7E90
-      - LinhClassApiOPTIONSB57DC47C
+      - LinhClassApiGatewaygetstatusGET4FCA796B
+      - LinhClassApiGatewaygetstatusOPTIONS859B57C0
+      - LinhClassApiGatewaygetstatusF6CE9FA2
+      - LinhClassApiGatewaygeturlGET5BB1F490
+      - LinhClassApiGatewaygeturlOPTIONS6AB01EFA
+      - LinhClassApiGatewaygeturlD5EC013C
+      - LinhClassApiGatewayOPTIONS82C42364
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Deployment/Resource
-  LinhClassApiDeploymentStageprod1EEBB589:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Deployment/Resource
+  LinhClassApiGatewayDeploymentStageprod6AA12034:
     Type: AWS::ApiGateway::Stage
     Properties:
       DeploymentId:
-        Ref: LinhClassApiDeployment7589AB6Cb5ad04b0708ddd0bad8a7b7c40e5f7b5
+        Ref: LinhClassApiGatewayDeploymentF983CC0A5ac78d74cf41ede7abbd7afde3fe6c12
       RestApiId:
-        Ref: LinhClassApi8E043DC2
+        Ref: LinhClassApiGateway057CB1D3
       StageName: prod
     DependsOn:
-      - LinhClassApiAccount45521E59
+      - LinhClassApiGatewayAccount605ABB94
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/DeploymentStage.prod/Resource
-  LinhClassApiOPTIONSB57DC47C:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/DeploymentStage.prod/Resource
+  LinhClassApiGatewayOPTIONS82C42364:
     Type: AWS::ApiGateway::Method
     Properties:
       ApiKeyRequired: false
@@ -852,10 +1036,11 @@ Resources:
       Integration:
         IntegrationResponses:
           - ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Api-Key'"
               method.response.header.Access-Control-Allow-Origin: "'http://localhost:5173'"
               method.response.header.Vary: "'Origin'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+              method.response.header.Access-Control-Allow-Credentials: "'true'"
             StatusCode: "204"
         RequestTemplates:
           application/json: "{ statusCode: 200 }"
@@ -866,28 +1051,29 @@ Resources:
             method.response.header.Access-Control-Allow-Origin: true
             method.response.header.Vary: true
             method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Credentials: true
           StatusCode: "204"
       ResourceId:
         Fn::GetAtt:
-          - LinhClassApi8E043DC2
+          - LinhClassApiGateway057CB1D3
           - RootResourceId
       RestApiId:
-        Ref: LinhClassApi8E043DC2
+        Ref: LinhClassApiGateway057CB1D3
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Default/OPTIONS/Resource
-  LinhClassApigeturlFFBF7E90:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Default/OPTIONS/Resource
+  LinhClassApiGatewaygeturlD5EC013C:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId:
         Fn::GetAtt:
-          - LinhClassApi8E043DC2
+          - LinhClassApiGateway057CB1D3
           - RootResourceId
       PathPart: get-url
       RestApiId:
-        Ref: LinhClassApi8E043DC2
+        Ref: LinhClassApiGateway057CB1D3
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Default/get-url/Resource
-  LinhClassApigeturlOPTIONS42185609:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Default/get-url/Resource
+  LinhClassApiGatewaygeturlOPTIONS6AB01EFA:
     Type: AWS::ApiGateway::Method
     Properties:
       ApiKeyRequired: false
@@ -896,10 +1082,11 @@ Resources:
       Integration:
         IntegrationResponses:
           - ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Api-Key'"
               method.response.header.Access-Control-Allow-Origin: "'http://localhost:5173'"
               method.response.header.Vary: "'Origin'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+              method.response.header.Access-Control-Allow-Credentials: "'true'"
             StatusCode: "204"
         RequestTemplates:
           application/json: "{ statusCode: 200 }"
@@ -910,14 +1097,15 @@ Resources:
             method.response.header.Access-Control-Allow-Origin: true
             method.response.header.Vary: true
             method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Credentials: true
           StatusCode: "204"
       ResourceId:
-        Ref: LinhClassApigeturlFFBF7E90
+        Ref: LinhClassApiGatewaygeturlD5EC013C
       RestApiId:
-        Ref: LinhClassApi8E043DC2
+        Ref: LinhClassApiGateway057CB1D3
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Default/get-url/OPTIONS/Resource
-  LinhClassApigeturlGETApiPermissionServerlessApiStackLinhClassApi0614ED7DGETgeturlD34818EA:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Default/get-url/OPTIONS/Resource
+  LinhClassApiGatewaygeturlGETApiPermissionServerlessApiStackLinhClassApiGateway02A58F62GETgeturl57519476:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
@@ -932,13 +1120,13 @@ Resources:
           - - "arn:"
             - Ref: AWS::Partition
             - ":execute-api:ap-northeast-1:650251698778:"
-            - Ref: LinhClassApi8E043DC2
+            - Ref: LinhClassApiGateway057CB1D3
             - /
-            - Ref: LinhClassApiDeploymentStageprod1EEBB589
+            - Ref: LinhClassApiGatewayDeploymentStageprod6AA12034
             - /GET/get-url
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Default/get-url/GET/ApiPermission.ServerlessApiStackLinhClassApi0614ED7D.GET..get-url
-  LinhClassApigeturlGETApiPermissionTestServerlessApiStackLinhClassApi0614ED7DGETgeturlE41748FB:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Default/get-url/GET/ApiPermission.ServerlessApiStackLinhClassApiGateway02A58F62.GET..get-url
+  LinhClassApiGatewaygeturlGETApiPermissionTestServerlessApiStackLinhClassApiGateway02A58F62GETgeturlF0EC57E8:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
@@ -953,11 +1141,11 @@ Resources:
           - - "arn:"
             - Ref: AWS::Partition
             - ":execute-api:ap-northeast-1:650251698778:"
-            - Ref: LinhClassApi8E043DC2
+            - Ref: LinhClassApiGateway057CB1D3
             - /test-invoke-stage/GET/get-url
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Default/get-url/GET/ApiPermission.Test.ServerlessApiStackLinhClassApi0614ED7D.GET..get-url
-  LinhClassApigeturlGET8F4977EA:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Default/get-url/GET/ApiPermission.Test.ServerlessApiStackLinhClassApiGateway02A58F62.GET..get-url
+  LinhClassApiGatewaygeturlGET5BB1F490:
     Type: AWS::ApiGateway::Method
     Properties:
       AuthorizationType: NONE
@@ -976,24 +1164,24 @@ Resources:
                   - Arn
               - /invocations
       ResourceId:
-        Ref: LinhClassApigeturlFFBF7E90
+        Ref: LinhClassApiGatewaygeturlD5EC013C
       RestApiId:
-        Ref: LinhClassApi8E043DC2
+        Ref: LinhClassApiGateway057CB1D3
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Default/get-url/GET/Resource
-  LinhClassApigetstatusDCEAD9F8:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Default/get-url/GET/Resource
+  LinhClassApiGatewaygetstatusF6CE9FA2:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId:
         Fn::GetAtt:
-          - LinhClassApi8E043DC2
+          - LinhClassApiGateway057CB1D3
           - RootResourceId
       PathPart: get-status
       RestApiId:
-        Ref: LinhClassApi8E043DC2
+        Ref: LinhClassApiGateway057CB1D3
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Default/get-status/Resource
-  LinhClassApigetstatusOPTIONS82B4275B:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Default/get-status/Resource
+  LinhClassApiGatewaygetstatusOPTIONS859B57C0:
     Type: AWS::ApiGateway::Method
     Properties:
       ApiKeyRequired: false
@@ -1002,10 +1190,11 @@ Resources:
       Integration:
         IntegrationResponses:
           - ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Api-Key'"
               method.response.header.Access-Control-Allow-Origin: "'http://localhost:5173'"
               method.response.header.Vary: "'Origin'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+              method.response.header.Access-Control-Allow-Credentials: "'true'"
             StatusCode: "204"
         RequestTemplates:
           application/json: "{ statusCode: 200 }"
@@ -1016,14 +1205,15 @@ Resources:
             method.response.header.Access-Control-Allow-Origin: true
             method.response.header.Vary: true
             method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Credentials: true
           StatusCode: "204"
       ResourceId:
-        Ref: LinhClassApigetstatusDCEAD9F8
+        Ref: LinhClassApiGatewaygetstatusF6CE9FA2
       RestApiId:
-        Ref: LinhClassApi8E043DC2
+        Ref: LinhClassApiGateway057CB1D3
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Default/get-status/OPTIONS/Resource
-  LinhClassApigetstatusGETApiPermissionServerlessApiStackLinhClassApi0614ED7DGETgetstatusC73B9D4F:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Default/get-status/OPTIONS/Resource
+  LinhClassApiGatewaygetstatusGETApiPermissionServerlessApiStackLinhClassApiGateway02A58F62GETgetstatus89C2D37D:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
@@ -1038,13 +1228,13 @@ Resources:
           - - "arn:"
             - Ref: AWS::Partition
             - ":execute-api:ap-northeast-1:650251698778:"
-            - Ref: LinhClassApi8E043DC2
+            - Ref: LinhClassApiGateway057CB1D3
             - /
-            - Ref: LinhClassApiDeploymentStageprod1EEBB589
+            - Ref: LinhClassApiGatewayDeploymentStageprod6AA12034
             - /GET/get-status
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Default/get-status/GET/ApiPermission.ServerlessApiStackLinhClassApi0614ED7D.GET..get-status
-  LinhClassApigetstatusGETApiPermissionTestServerlessApiStackLinhClassApi0614ED7DGETgetstatus87B8CDD0:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Default/get-status/GET/ApiPermission.ServerlessApiStackLinhClassApiGateway02A58F62.GET..get-status
+  LinhClassApiGatewaygetstatusGETApiPermissionTestServerlessApiStackLinhClassApiGateway02A58F62GETgetstatusEF2D3753:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
@@ -1059,11 +1249,11 @@ Resources:
           - - "arn:"
             - Ref: AWS::Partition
             - ":execute-api:ap-northeast-1:650251698778:"
-            - Ref: LinhClassApi8E043DC2
+            - Ref: LinhClassApiGateway057CB1D3
             - /test-invoke-stage/GET/get-status
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Default/get-status/GET/ApiPermission.Test.ServerlessApiStackLinhClassApi0614ED7D.GET..get-status
-  LinhClassApigetstatusGETB669B13A:
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Default/get-status/GET/ApiPermission.Test.ServerlessApiStackLinhClassApiGateway02A58F62.GET..get-status
+  LinhClassApiGatewaygetstatusGET4FCA796B:
     Type: AWS::ApiGateway::Method
     Properties:
       AuthorizationType: NONE
@@ -1082,11 +1272,11 @@ Resources:
                   - Arn
               - /invocations
       ResourceId:
-        Ref: LinhClassApigetstatusDCEAD9F8
+        Ref: LinhClassApiGatewaygetstatusF6CE9FA2
       RestApiId:
-        Ref: LinhClassApi8E043DC2
+        Ref: LinhClassApiGateway057CB1D3
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassApi/Default/get-status/GET/Resource
+      aws:cdk:path: ServerlessApiStack/LinhClassApiGateway/Default/get-status/GET/Resource
   CDKMetadata:
     Type: AWS::CDK::Metadata
     Properties:
@@ -1094,16 +1284,16 @@ Resources:
     Metadata:
       aws:cdk:path: ServerlessApiStack/CDKMetadata/Default
 Outputs:
-  LinhClassApiEndpoint14BE3883:
+  LinhClassApiGatewayEndpoint6C3B2480:
     Value:
       Fn::Join:
         - ""
         - - https://
-          - Ref: LinhClassApi8E043DC2
+          - Ref: LinhClassApiGateway057CB1D3
           - .execute-api.ap-northeast-1.
           - Ref: AWS::URLSuffix
           - /
-          - Ref: LinhClassApiDeploymentStageprod1EEBB589
+          - Ref: LinhClassApiGatewayDeploymentStageprod6AA12034
           - /
 Parameters:
   BootstrapVersion:
