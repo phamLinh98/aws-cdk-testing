@@ -13,8 +13,21 @@ export const createNewBucketS3 = (scope: Construct, idBucket: any, bucketName: s
       });
 };
 
-//TODO: Create New SQS queue 
-export const createNewSQS = (scope: Construct, idQueue: any, queueName: any, maxTime: any) => {
+//TODO: Create New SQS queue to receive message from Lambda function
+export const createNewSQS = (scope: Construct, idQueue: any, queueName: any, maxTime: any, visibilityTimeout: any = 30, deadLetterQueue: any, maxReceiveCount: any = 5) => {
+      return new cdk.aws_sqs.Queue(scope, idQueue, {
+            queueName: queueName,// the name of the queue
+            retentionPeriod: cdk.Duration.days(maxTime), // the time that a message is retained in the queue
+            visibilityTimeout: cdk.Duration.seconds(visibilityTimeout),// the time that a message is invisible to other consumers after being received
+            deadLetterQueue: {
+                  queue: deadLetterQueue, // Reference the dead-letter queue object
+                  maxReceiveCount: maxReceiveCount, // the maximum number of times a message can be received before being sent to the dead-letter queue
+            },
+      });
+}
+
+//TODO: Create New Dead Letter Queue
+export const createNewDeadLetterQueue = (scope: Construct, idQueue: any, queueName: any, maxTime: any) => {
       return new cdk.aws_sqs.Queue(scope, idQueue, {
             queueName: queueName,
             retentionPeriod: cdk.Duration.days(maxTime),
@@ -73,7 +86,7 @@ export const grantServiceAnServiceReadWriteAListService = (service: any, policy:
 }
 
 //TODO; Setting S3 Notification When New file add to S3
-export const settingS3Notification = (bucketName:any, filterFile:any) => {
+export const settingS3Notification = (bucketName: any, filterFile: any) => {
       return new cdk.aws_lambda_event_sources.S3EventSource(bucketName, {
             events: [cdk.aws_s3.EventType.OBJECT_CREATED],
             filters: [{ suffix: filterFile }],
@@ -81,15 +94,15 @@ export const settingS3Notification = (bucketName:any, filterFile:any) => {
 }
 
 //TODO: Setting CORS for API Gateway
-export const settingApiGatewayRoleCors = (scope:any, apiGatewayName:any, ) => {
-     return new cdk.aws_apigateway.RestApi(scope, apiGatewayName, {
-      restApiName: apiGatewayName,
-      // enable CORS for the API
-      defaultCorsPreflightOptions: configCorsApiGateway("http://localhost:5173", ["Content-Type", "Authorization", "X-Api-Key"]),
-    }); 
+export const settingApiGatewayRoleCors = (scope: any, apiGatewayName: any,) => {
+      return new cdk.aws_apigateway.RestApi(scope, apiGatewayName, {
+            restApiName: apiGatewayName,
+            // enable CORS for the API
+            defaultCorsPreflightOptions: configCorsApiGateway("http://localhost:5173", ["Content-Type", "Authorization", "X-Api-Key"]),
+      });
 }
 
 //TODO: Setup API Gateway for Lambda Function
-export const setupApiGatewayForLambdaFn = (lambdaFunc:any) => {
+export const setupApiGatewayForLambdaFn = (lambdaFunc: any) => {
       return new cdk.aws_apigateway.LambdaIntegration(lambdaFunc);
 }

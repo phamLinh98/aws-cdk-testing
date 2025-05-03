@@ -68,11 +68,27 @@ Resources:
           - Arn
     Metadata:
       aws:cdk:path: ServerlessApiStack/LinhClassCsvBucket/AllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedLambda091E4338
+  LinhClassDeadLetterQueue7A0647EC:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+      QueueName: linhclass-dead-letter-queue
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/LinhClassDeadLetterQueue/Resource
   LinhClassLambdaCallToQueueFD2281BE:
     Type: AWS::SQS::Queue
     Properties:
       MessageRetentionPeriod: 1209600
       QueueName: linhclass-lambda-call-to-queue
+      RedrivePolicy:
+        deadLetterTargetArn:
+          Fn::GetAtt:
+            - LinhClassDeadLetterQueue7A0647EC
+            - Arn
+        maxReceiveCount: 5
+      VisibilityTimeout: 30
     UpdateReplacePolicy: Delete
     DeletionPolicy: Delete
     Metadata:

@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { createNewBucketS3, createNewLambdaFunction, createNewSQS, createNewTableDynamoDB, grantServiceListServiceReadWriteAnService, settingNewPolicy, grantServiceAnServiceReadWriteAListService, settingSqsBatchSizeCurrentcy, settingS3Notification, settingApiGatewayRoleCors, setupApiGatewayForLambdaFn } from './custom-constracts/csv-upload-resources';
+import { createNewBucketS3, createNewLambdaFunction, createNewSQS, createNewTableDynamoDB, grantServiceListServiceReadWriteAnService, settingNewPolicy, grantServiceAnServiceReadWriteAListService, settingSqsBatchSizeCurrentcy, settingS3Notification, settingApiGatewayRoleCors, setupApiGatewayForLambdaFn, createNewDeadLetterQueue } from './custom-constracts/csv-upload-resources';
 
 export class ApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -12,8 +12,11 @@ export class ApiStack extends cdk.Stack {
     //TODO: create an new bucket name linhclass-csv-bucket with cors policy
     const bucketCsvS3 = createNewBucketS3(this, 'LinhClassCsvBucket', 'linhclass-csv-bucket');
 
+    //TODO: create an new dead letter queue name linhclass-dead-letter-queue
+    const deadLetterQueue = createNewDeadLetterQueue(this, 'LinhClassDeadLetterQueue', 'linhclass-dead-letter-queue', 14);
+
     //TODO: create an new SQS name linhclass-lambda-call-to-queue
-    const queueSQS = createNewSQS(this, 'LinhClassLambdaCallToQueue', 'linhclass-lambda-call-to-queue', 14);
+    const queueSQS = createNewSQS(this, 'LinhClassLambdaCallToQueue', 'linhclass-lambda-call-to-queue', 14, 30, deadLetterQueue, 5);
 
     //TODO: create 2 dynamoDB table name Users and upload-csv
     const usersTable = createNewTableDynamoDB(this, 'UsersTable', 'Users');
@@ -28,6 +31,7 @@ export class ApiStack extends cdk.Stack {
 
     //TODO: create a new lambda function name get-status-from-dynamodb-lambda get source from src/rebuild/get-status 
     const getStatusFromDynamoDBLambda = createNewLambdaFunction(this, 'GetStatusFromDynamoDBLambda', 'get-status-from-dynamodb-lambda', './src/rebuild/get-status', "get-status-from-dynamodb-lambda.mjs", 'get-status-from-dynamodb-lambda.handler');
+    
     // getStatusFromDynamoDBLambda can read and write dynamoDb 
     grantServiceListServiceReadWriteAnService(listTableInDynamoDB, 'grantReadWriteData', getStatusFromDynamoDBLambda);
 
@@ -41,12 +45,12 @@ export class ApiStack extends cdk.Stack {
     const getCsvReadDetailUpdateInProcessingLambda = createNewLambdaFunction(this, 'GetCsvReadDetailUpdateInProcessingLambda', 'get-csv-read-detail-update-inprocessing-lambda', './src/rebuild/get-csv-read-detail', "get-csv-read-detail-update-inprocessing-lambda.mjs", 'get-csv-read-detail-update-inprocessing-lambda.handler');
     grantServiceListServiceReadWriteAnService(listTableInDynamoDB, 'grantReadWriteData', getCsvReadDetailUpdateInProcessingLambda);
    
-    // Add policy IAM to Lambda function to access SQS
+    //TODO: Add policy IAM to Lambda function to access SQS
     const listSqsRoleInIAM = ['sqs:SendMessage', 'sqs:ReceiveMessage', 'sqs:DeleteMessage', 'sqs:GetQueueAttributes', 'sqs:ListQueues'];
     const sqsArn = [queueSQS.queueArn];
     const sqsPolicy = settingNewPolicy(listSqsRoleInIAM, sqsArn);
 
-    // Add a separate policy for ListQueues as it applies to all queues in the account
+    //TODO Add a separate policy for ListQueues as it applies to all queues in the account
     const sqsListRoleInIAM = ['*'];
     const listQueuesPolicy = settingNewPolicy(sqsListRoleInIAM, sqsListRoleInIAM);
     const listLambdaFunction = [createPresignedUrlLambda, getStatusFromDynamoDBLambda, getBatchIdUpdateStatusToUploadedLambda, getCsvReadDetailUpdateInProcessingLambda];
@@ -55,7 +59,7 @@ export class ApiStack extends cdk.Stack {
     grantServiceListServiceReadWriteAnService(listLambdaFunction, 'addToRolePolicy', sqsPolicy);
     grantServiceAnServiceReadWriteAListService(queueSQS, 'grantSendMessages', listLambdaFunction);
 
-    // Add policy to lambda function to access DynamoDB
+    // Add Policy to lambda function to access DynamoDB
     const listDynamoRoleInIAM = ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:UpdateItem'];
     const dynamoDbArn = [usersTable.tableArn, uploadCsvTable.tableArn];
     const dynamoDbPolicy = settingNewPolicy(listDynamoRoleInIAM, dynamoDbArn);
@@ -81,20 +85,18 @@ export class ApiStack extends cdk.Stack {
     const bucketCsvS3Notification = settingS3Notification(bucketCsvS3, '.csv');
     getBatchIdUpdateStatusToUploadedLambda.addEventSource(bucketCsvS3Notification);
 
-    //Create an API Gateway
+    //TODO: Create an API Gateway name linhclass-api-gateway
     const apiName = settingApiGatewayRoleCors(this, 'LinhClassApiGateway');
 
-    // GET get-url endpoint calling createPresignedUrlLambda
+    //TODO: GET get-url endpoint calling createPresignedUrlLambda
     const getUrlIntegration = setupApiGatewayForLambdaFn(createPresignedUrlLambda);
     apiName.root.addResource('get-url').addMethod('GET', getUrlIntegration);
 
-    // GET get-status endpoint calling getStatusFromDynamoDBLambda
+    //TODO: GET get-status endpoint calling getStatusFromDynamoDBLambda
     const getStatusIntegration = setupApiGatewayForLambdaFn(getStatusFromDynamoDBLambda);
     apiName.root.addResource('get-status').addMethod('GET', getStatusIntegration);
 
-    //TODO setting secretManager for all lambda function using
+    //TODO setting secretManager for all lambda function using mySecret
     grantServiceAnServiceReadWriteAListService(mySecret, 'grantRead', listLambdaFunction);
   }
 }
-
-
