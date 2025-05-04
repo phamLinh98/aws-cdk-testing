@@ -10,6 +10,17 @@
                   "name": "Launch Chrome against localhost",
                   "url": "http://localhost:8080",
                   "webRoot": "${workspaceFolder}"
-            }
+            },
+            // Debug file index.js
+            {
+                  "type": "node",
+                  "request": "launch",
+                  "name": "Index.js Debug with Nodemon",
+                  "runtimeExecutable": "nodemon",
+                  "program": "${workspaceFolder}/index.js",
+                  "restart": true,
+                  "console": "integratedTerminal",
+                  "internalConsoleOptions": "neverOpen"
+            },
       ]
 }
