@@ -114,9 +114,220 @@ app.get('/users', async (req, res) => {
   }
 });
 
+app.get('/crud', async (req, res) => {
+  try {
+    const db = await open({
+      filename: join(__dirname, 'database.sqlite'),
+      driver: sqlite3.Database
+    });
 
+    const users = await db.all('SELECT * FROM users');
 
-// Add 1000 other routes here if you want
+    const html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CRUD Users</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+          }
+          header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+          }
+          main {
+            padding: 20px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          }
+          table, th, td {
+            border: 1px solid #ddd;
+          }
+          th, td {
+            padding: 12px;
+            text-align: left;
+          }
+          th {
+            background-color: #f2f2f2;
+          }
+          tr:hover {
+            background-color: #f1f1f1;
+          }
+          img {
+            border-radius: 50%;
+          }
+          button {
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+          }
+          button:hover {
+            background-color: #45a049;
+          }
+        </style>
+      </head>
+      <body>
+        <header>
+          <h1>CRUD Users</h1>
+        </header>
+        <main>
+          <button onclick="window.location.href='/create-user'">Create User</button>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Avatar</th>
+                <th>Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${users.map(user => `
+                <tr>
+                  <td>${user.name}</td>
+                  <td>${user.role}</td>
+                  <td><img src="${user.avatar}" alt="Avatar" width="50"></td>
+                  <td>${user.email}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </main>
+      </body>
+      </html>
+    `;
+
+    res.send(html);
+  } catch (error) {
+    console.error('Error generating CRUD HTML:', error);
+    res.status(500).send('Error generating CRUD HTML.');
+  }
+});
+
+app.get('/create-user', (req, res) => {
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Create User</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 0;
+          background-color: #f9f9f9;
+        }
+        header {
+          background-color: #4CAF50;
+          color: white;
+          padding: 10px 20px;
+          text-align: center;
+        }
+        main {
+          padding: 20px;
+        }
+        form {
+          display: flex;
+          flex-direction: column;
+          width: 300px;
+          margin: 0 auto;
+          background-color: white;
+          padding: 20px;
+          border-radius: 8px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        label {
+          margin-bottom: 5px;
+          font-weight: bold;
+        }
+        input {
+          margin-bottom: 15px;
+          padding: 10px;
+          font-size: 16px;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+        }
+        button {
+          padding: 10px 15px;
+          background-color: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-size: 16px;
+        }
+        button:hover {
+          background-color: #45a049;
+        }
+      </style>
+    </head>
+    <body>
+      <header>
+        <h1>Create User</h1>
+      </header>
+      <main>
+        <form action="/create-user" method="POST">
+          <label for="name">Name:</label>
+          <input type="text" id="name" name="name" required>
+          
+          <label for="role">Role:</label>
+          <input type="text" id="role" name="role" required>
+          
+          <label for="avatar">Avatar URL:</label>
+          <input type="text" id="avatar" name="avatar" required>
+          
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" required>
+          
+          <button type="submit">Create</button>
+        </form>
+      </main>
+    </body>
+    </html>
+  `;
+  res.send(html);
+});
+
+app.post('/create-user', express.urlencoded({ extended: true }), async (req, res) => {
+  const { name, role, avatar, email } = req.body;
+
+  try {
+    const db = await open({
+      filename: join(__dirname, 'database.sqlite'),
+      driver: sqlite3.Database
+    });
+
+    await db.run(
+      `INSERT INTO users (name, role, avatar, email) VALUES (?, ?, ?, ?)`,
+      [name, role, avatar, email]
+    );
+
+    res.redirect('/crud');
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).send('Error creating user.');
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
