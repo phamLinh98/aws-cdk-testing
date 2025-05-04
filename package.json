@@ -34,6 +34,7 @@
     "@aws-sdk/client-sqs": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
     "glob": "^11.0.2",
+    "mysql2": "^3.14.1",
     "terser-webpack-plugin": "^5.3.14"
   }
 }
