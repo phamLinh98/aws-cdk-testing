@@ -1,22 +1,15 @@
-import { connectToDynamoDb, updateAllRecordsInTableWithAvatar } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateDynamoDb";
-import { connectToS3Bucket, copyItemToNewBucket } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateS3";
-import { getSecretOfKey } from "../get-secret-key-from-manager";
+import { updateAllRecordsInTableWithAvatar } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateDynamoDb";
+import { copyItemToNewBucket } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateS3";
 
-export const setAvatarDemo = async () => {
+export const setAvatarDemo = async (dynamoDb:any, s3:any, newBucket:any, usersTable:any) => {
       try {
-            const newBucket = await getSecretOfKey("bucketAvatar");
-            const usersTable = await getSecretOfKey("usersTableName");
             const path = "picture/linh123.jpg";
             //TODO: 
             const newImageUrl = `avatar_${Date.now()}.jpg`;
             console.log('newImageUrl', newImageUrl);
-
-            const s3 = await connectToS3Bucket();
-            const dynamoDb = await connectToDynamoDb();
-
             // Update avatar for all users 
             const updateAvatar = await updateAllRecordsInTableWithAvatar(dynamoDb, newImageUrl, usersTable);
-            console.log('Update Avatar 1',updateAvatar);
+            console.log('Update Avatar thanh cong',updateAvatar);
 
             //TODO: save newImage vào bucket newBucket
             const copyCsvToNewBucket = await copyItemToNewBucket(s3, newBucket, newImageUrl, path);

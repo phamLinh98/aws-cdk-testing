@@ -237,7 +237,7 @@ export const updateAllRecordsInTableWithEmail = async (dynamoDBClient: any, tabl
             }
 
             for (const item of items) {
-                const primaryKey = item.id; // Assuming 'id' is the primary key of the table
+                  const primaryKey = item.id; // Assuming 'id' is the primary key of the table
                   if (!primaryKey) {
                         console.error("Item missing primary key:", item);
                         continue; // bỏ qua nhưng không thất bại toàn bộ
@@ -265,37 +265,32 @@ export const updateAllRecordsInTableWithEmail = async (dynamoDBClient: any, tabl
 // Update them with role
 export const updateAllRecordsInTableWithRole = async (dynamoDBClient: any, usersTable: any) => {
       try {
+            console.log('Set ROLE LOOP');
             const scanCommand = new ScanCommand({ TableName: usersTable });
             const scanResult = await dynamoDBClient.send(scanCommand);
             const items = scanResult.Items;
-
-            console.log('items>>>', items);
-
             if (!items || items.length === 0) {
                   console.log("No items found in the table.");
                   return;
             }
 
             for (const item of items) {
-                  if (!item.id) {
+                  const primaryKey = item.id;
+                  if (!primaryKey) {
                         console.error("Item missing primary key:", item);
                         continue;
                   }
 
                   const updateCommand = new UpdateItemCommand({
                         TableName: usersTable,
-                        Key: { id: item.id },
-                        UpdateExpression: "SET #position = :position",
-                        ExpressionAttributeNames: {
-                              "#position": "position"
-                        },
+                        Key: { id: primaryKey },
+                        UpdateExpression: "SET role = :role",
                         ExpressionAttributeValues: {
-                              ":position": { S: 'employees' }
-                        }
+                              ":role": { S: "user" },
+                        },
                   });
 
                   await dynamoDBClient.send(updateCommand);
-                  console.log(`Cập nhật role thành công: ${item.id.S}`);
             }
             return true;
       } catch (error) {
