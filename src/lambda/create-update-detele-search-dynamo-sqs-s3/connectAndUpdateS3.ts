@@ -104,6 +104,7 @@ export const createNewBucketS3 = async (s3: any, bucketDestination: any) => {
 //Copy file from one bucket to another
 export const copyItemToNewBucket = async (s3: any, newBucket: any, newImageUrl: any, path: any) => {
     try {
+        console.log('Bat dau copy file tu bucket cu sang bucket moi');
         const params = {
             Bucket: newBucket,
             Key: newImageUrl,
@@ -112,6 +113,7 @@ export const copyItemToNewBucket = async (s3: any, newBucket: any, newImageUrl: 
         const command = new PutObjectCommand(params);
         await s3.send(command);
         console.log('Upload new image to S3 bucket successfully');
+        return true;
 
     } catch (error) {
         console.error("Copy file from one bucket to another error:", error);

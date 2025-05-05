@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { readFile } from 'fs/promises';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
+import { addAbortSignal } from 'stream';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

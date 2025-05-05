@@ -3,9 +3,10 @@ import { connectToS3Bucket, getAllContentFromS3Uploaded } from "../create-update
 import { connectToSQS, removeMessageFromSQS } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateSQS";
 import { setAvatarDemo } from "../demo/avatar";
 import { setMailDemo } from "../demo/mail";
+import { setRoleDemo } from "../demo/role";
 import { getSecretOfKey } from "../get-secret-key-from-manager";
 
-export const handler = async (event:any) => {
+export const handler = async (event: any) => {
       try {
             //Get the secret key from AWS Secret Manager
             const usersTable = await getSecretOfKey('usersTableName');
@@ -60,37 +61,29 @@ export const handler = async (event:any) => {
 
                   //Find all records have status InsertSuccess
                   const records = await findAllRecordsHaveStatusInsertSuccess(dynamoDb, updateCsvTable, 'InsertSuccess');
+                  console.log('Found records:', records); // Check if records exist
+                  // Remove message from SQS
+                  await removeMessageFromSQS(event, queueUrl, sqs);
 
-                  console.log('Records >>> ', records)
-                  if (records && records.Items.length > 0) {
-                        console.log('Record Debug', records);
+                  if (records && records.Items && records.Items.length > 0) {
+                        console.log('Records in InsertSuccess state:', records.Items.length);
                         for (const item of records.Items) {
-                              console.log('Bat dau xu ly logic batch processing', item.id.S);
-                              // Update the table in DynamoDB status to BatchRunning
                               await updateTableInDynamoDB(dynamoDb, updateCsvTable, item.id.S, 'BatchRunning');
                         }
-                        // Remove message from SQS
-                        await removeMessageFromSQS(event, queueUrl, sqs);
-                        console.log('Xoa message khoi SQS queue thanh cong');
-
-                        // Set Avatar for all users
-                        await setAvatarDemo();
-
-                        // Set mail for all users
-                        await setMailDemo();
-                        
-                        console.log('Set mail thanh cong');
-
-                        // Set role for all users
-                        // await setRoleDemo();
-                        // console.log('Set role thanh cong');
-
-                        // Update the table in DynamoDB status to Success
-                        await updateTableInDynamoDB(dynamoDb, updateCsvTable, fileId, 'Success');
-                        console.log('Hoan tat');
                   }
             }
 
+            // Set Avatar for all users
+            const setAvatar = await setAvatarDemo();
+            console.log('Cap nhat avatar thanh cong', setAvatar);
+
+            // Set Mail for all users
+            const setMail = await setMailDemo();
+            console.log('Cap nhat mail thanh cong', setMail);
+
+            // Set Role for all users
+            const setRole = await setRoleDemo();
+            console.log('Cap nhat role thanh cong', setRole);
 
       } catch (error) {
             console.error("Error in Lambda function:", error);

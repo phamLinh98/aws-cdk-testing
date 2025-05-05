@@ -138,46 +138,11 @@ var findAllRecordsHaveStatusInsertSuccess = async (dynamoDbClient, tableName, st
     throw error;
   }
 };
-var updateAllRecordsInTableWithEmail = async (dynamoDBClient, tableName) => {
-  try {
-    const scanCommand = new ScanCommand({ TableName: tableName });
-    const scanResult = await dynamoDBClient.send(scanCommand);
-    const items = scanResult.Items;
-    console.log("items>>>", items);
-    if (!items || items.length === 0) {
-      console.log("No items found in the table.");
-      return;
-    }
-    for (const item of items) {
-      const primaryKey = item.id;
-      console.log("primaryKey>>>", primaryKey);
-      if (!primaryKey) {
-        console.error("Item missing primary key:", item);
-        continue;
-      }
-      const updateCommand = new UpdateItemCommand({
-        TableName: tableName,
-        Key: { id: primaryKey },
-        // Replace 'id' with your actual primary key attribute name
-        UpdateExpression: "SET email = :email",
-        ExpressionAttributeValues: {
-          ":email": { S: "automail@gmail.com" }
-        }
-      });
-      await dynamoDBClient.send(updateCommand);
-      console.log(`C\u1EADp nh\u1EADt email th\xE0nh c\xF4ng: ${primaryKey.S}`);
-    }
-  } catch (error) {
-    console.error("Error finding records with status InsertSuccess:", error);
-    throw error;
-  }
-};
 var updateAllRecordsInTableWithAvatar = async (dynamoDBClient, imageUrl, usersTable) => {
   try {
     const scanCommand = new ScanCommand({ TableName: usersTable });
     const scanResult = await dynamoDBClient.send(scanCommand);
     const items = scanResult.Items;
-    console.log("items>>>", items);
     if (!items || items.length === 0) {
       console.log("No items found in the table.");
       return;
@@ -197,10 +162,79 @@ var updateAllRecordsInTableWithAvatar = async (dynamoDBClient, imageUrl, usersTa
         }
       });
       await dynamoDBClient.send(updateCommand);
-      console.log(`C\u1EADp nh\u1EADt avatar th\xE0nh c\xF4ng: ${primaryKey.S}`);
     }
+    return true;
   } catch (error) {
     console.error("Error updating records with avatar:", error);
+    throw error;
+  }
+};
+var updateAllRecordsInTableWithEmail = async (dynamoDBClient, tableName) => {
+  try {
+    console.log("Set Mail LOOP");
+    const scanCommand = new ScanCommand({ TableName: tableName });
+    const scanResult = await dynamoDBClient.send(scanCommand);
+    const items = scanResult.Items;
+    console.log("items", items);
+    if (!items || items.length === 0) {
+      console.log("No items found in the table.");
+      return true;
+    }
+    for (const item of items) {
+      if (!item.id) {
+        console.error("Item missing primary key:", item);
+        continue;
+      }
+      console.log("item123", item);
+      const updateCommand = new UpdateItemCommand({
+        TableName: tableName,
+        Key: { id: item.id },
+        UpdateExpression: "SET email = :email",
+        ExpressionAttributeValues: {
+          ":email": { S: "automail@gmail.com" }
+        }
+      });
+      await dynamoDBClient.send(updateCommand);
+      console.log(`C\u1EADp nh\u1EADt email th\xE0nh c\xF4ng: ${item.id.S}`);
+    }
+    return true;
+  } catch (error) {
+    console.error("Error updating records:", error);
+    return false;
+  }
+};
+var updateAllRecordsInTableWithRole = async (dynamoDBClient, usersTable) => {
+  try {
+    const scanCommand = new ScanCommand({ TableName: usersTable });
+    const scanResult = await dynamoDBClient.send(scanCommand);
+    const items = scanResult.Items;
+    console.log("items>>>", items);
+    if (!items || items.length === 0) {
+      console.log("No items found in the table.");
+      return;
+    }
+    for (const item of items) {
+      if (!item.id) {
+        console.error("Item missing primary key:", item);
+        continue;
+      }
+      const updateCommand = new UpdateItemCommand({
+        TableName: usersTable,
+        Key: { id: item.id },
+        UpdateExpression: "SET #position = :position",
+        ExpressionAttributeNames: {
+          "#position": "position"
+        },
+        ExpressionAttributeValues: {
+          ":position": { S: "employees" }
+        }
+      });
+      await dynamoDBClient.send(updateCommand);
+      console.log(`C\u1EADp nh\u1EADt role th\xE0nh c\xF4ng: ${item.id.S}`);
+    }
+    return true;
+  } catch (error) {
+    console.error("Error updating records with role:", error);
     throw error;
   }
 };
@@ -239,28 +273,9 @@ var getAllContentFromS3Uploaded = async (params, s3) => {
     throw error;
   }
 };
-var createNewBucketS3 = async (s3, bucketDestination) => {
-  try {
-    await s3.send(new HeadBucketCommand({ Bucket: bucketDestination }));
-    console.log(`Bucket ${bucketDestination} already exists.`);
-  } catch (error) {
-    if (error.$metadata?.httpStatusCode === 404) {
-      const createBucketParams = {
-        Bucket: bucketDestination,
-        CreateBucketConfiguration: {
-          LocationConstraint: "ap-northeast-1"
-        }
-      };
-      await s3.send(new CreateBucketCommand(createBucketParams));
-      console.log(`Bucket ${bucketDestination} created successfully.`);
-    } else {
-      console.error("Error creating new bucket S3:", error);
-      throw error;
-    }
-  }
-};
 var copyItemToNewBucket = async (s3, newBucket, newImageUrl, path) => {
   try {
+    console.log("Bat dau copy file tu bucket cu sang bucket moi");
     const params = {
       Bucket: newBucket,
       Key: newImageUrl,
@@ -269,6 +284,7 @@ var copyItemToNewBucket = async (s3, newBucket, newImageUrl, path) => {
     const command = new PutObjectCommand(params);
     await s3.send(command);
     console.log("Upload new image to S3 bucket successfully");
+    return true;
   } catch (error) {
     console.error("Copy file from one bucket to another error:", error);
     throw error;
@@ -331,17 +347,16 @@ var setAvatarDemo = async () => {
   try {
     const newBucket = await getSecretOfKey("bucketAvatar");
     const usersTable = await getSecretOfKey("usersTableName");
-    const createNewBucket = await connectToS3Bucket();
-    await createNewBucketS3(createNewBucket, newBucket);
     const path = "picture/linh123.jpg";
-    const randomSequence = "-demo123";
-    console.log("Random Sequence:", randomSequence);
-    const newImageUrl = `avatar${randomSequence}.jpg`;
+    const newImageUrl = `avatar_${Date.now()}.jpg`;
+    console.log("newImageUrl", newImageUrl);
     const s3 = await connectToS3Bucket();
     const dynamoDb = await connectToDynamoDb();
-    await updateAllRecordsInTableWithAvatar(dynamoDb, newImageUrl, usersTable);
-    console.log("cap nhat avatar thanh cong");
-    await copyItemToNewBucket(s3, newBucket, newImageUrl, path);
+    const updateAvatar = await updateAllRecordsInTableWithAvatar(dynamoDb, newImageUrl, usersTable);
+    console.log("Update Avatar 1", updateAvatar);
+    const copyCsvToNewBucket = await copyItemToNewBucket(s3, newBucket, newImageUrl, path);
+    console.log("copyCsvToNewBucket123", copyCsvToNewBucket);
+    return true;
   } catch (error) {
     console.error("Call Lambda Avatar Fail", error);
     throw error;
@@ -351,12 +366,28 @@ var setAvatarDemo = async () => {
 // src/lambda/demo/mail.ts
 var setMailDemo = async () => {
   try {
+    console.log("Bat dau set new mail record");
     const dynamoDBClient = await connectToDynamoDb();
     const usersTableName = await getSecretOfKey("usersTableName");
-    await updateAllRecordsInTableWithEmail(dynamoDBClient, usersTableName);
-    console.log("Update Mail thanh cong");
+    const updateMail = await updateAllRecordsInTableWithEmail(dynamoDBClient, usersTableName);
+    return updateMail;
   } catch (error) {
     console.error("Error setting email:", error);
+    throw error;
+  }
+};
+
+// src/lambda/demo/role.ts
+var setRoleDemo = async () => {
+  try {
+    console.log("Set new role record");
+    const dynamoDBClient = await connectToDynamoDb();
+    const usersTable = await getSecretOfKey("usersTableName");
+    await updateAllRecordsInTableWithRole(dynamoDBClient, usersTable);
+    console.log("Update Role thanh cong");
+    return true;
+  } catch (error) {
+    console.error("Error setting role:", error);
     throw error;
   }
 };
@@ -395,22 +426,21 @@ var handler = async (event) => {
       await updateTableInDynamoDB(dynamoDb, updateCsvTable, fileId, "InsertSuccess");
       console.log("cap nhat insert success >>>");
       const records = await findAllRecordsHaveStatusInsertSuccess(dynamoDb, updateCsvTable, "InsertSuccess");
-      console.log("Records >>> ", records);
-      if (records && records.Items.length > 0) {
-        console.log("Record Debug", records);
+      console.log("Found records:", records);
+      await removeMessageFromSQS(event, queueUrl, sqs);
+      if (records && records.Items && records.Items.length > 0) {
+        console.log("Records in InsertSuccess state:", records.Items.length);
         for (const item of records.Items) {
-          console.log("Bat dau xu ly logic batch processing", item.id.S);
           await updateTableInDynamoDB(dynamoDb, updateCsvTable, item.id.S, "BatchRunning");
         }
-        await removeMessageFromSQS(event, queueUrl, sqs);
-        console.log("Xoa message khoi SQS queue thanh cong");
-        await setAvatarDemo();
-        await setMailDemo();
-        console.log("Set mail thanh cong");
-        await updateTableInDynamoDB(dynamoDb, updateCsvTable, fileId, "Success");
-        console.log("Hoan tat");
       }
     }
+    const setAvatar = await setAvatarDemo();
+    console.log("Cap nhat avatar thanh cong", setAvatar);
+    const setMail = await setMailDemo();
+    console.log("Cap nhat mail thanh cong", setMail);
+    const setRole = await setRoleDemo();
+    console.log("Cap nhat role thanh cong", setRole);
   } catch (error) {
     console.error("Error in Lambda function:", error);
     throw error;

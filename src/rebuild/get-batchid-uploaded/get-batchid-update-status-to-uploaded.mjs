@@ -141,7 +141,9 @@ var handler = async (event) => {
     console.log("queryUrl>>", queryUrl);
     const sqsParams = {
       QueueUrl: queryUrl,
+      // chỉ định hàng đợi nào nhận message
       MessageBody: JSON.stringify({ fileId })
+      // nội dung message
     };
     console.log("sqsParams>>>", sqsParams);
     await sendNewMessageToSQS(sqsClient, sqsParams);

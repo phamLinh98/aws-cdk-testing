@@ -3,11 +3,12 @@ import { getSecretOfKey } from "../get-secret-key-from-manager";
 
 export const setRoleDemo = async () => {
       try {
-            console.log('Setting role...');
+            console.log('Set new role record');
             const dynamoDBClient = await connectToDynamoDb();
             const usersTable = await getSecretOfKey('usersTableName');
             await updateAllRecordsInTableWithRole(dynamoDBClient, usersTable);
             console.log('Update Role thanh cong');
+            return true;
       } catch (error) {
             console.error('Error setting role:', error);
             throw error;
