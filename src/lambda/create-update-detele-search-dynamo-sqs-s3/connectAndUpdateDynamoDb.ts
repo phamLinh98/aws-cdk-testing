@@ -157,7 +157,7 @@ export const updateUsersTableWitInfoFromCSV = async (dynamoDbClient: any, userDa
                   await dynamoDbClient.send(putCommand);
             }
       } catch (dynamoError: any) {
-            console.error('Cap nhat Users that bai', dynamoError);
+            console.log('Cap nhat Users that bai', dynamoError);
             throw dynamoError;
       }
 }
@@ -216,7 +216,7 @@ export const updateAllRecordsInTableWithAvatar = async (dynamoDBClient: any, ima
 
                   await dynamoDBClient.send(updateCommand);
             }
-            return true;
+            return;
       } catch (error) {
             console.error('Error updating records with avatar:', error);
             throw error;
@@ -233,7 +233,7 @@ export const updateAllRecordsInTableWithEmail = async (dynamoDBClient: any, tabl
             const items = scanResult.Items;
             if (!items || items.length === 0) {
                   console.log("No items found in the table.");
-                  return true; // Không có gì để update => cũng không lỗi
+                  return; // Không có gì để update => cũng không lỗi
             }
 
             for (const item of items) {
@@ -254,10 +254,9 @@ export const updateAllRecordsInTableWithEmail = async (dynamoDBClient: any, tabl
                   await dynamoDBClient.send(updateCommand);
             }
 
-            return true; // thành công toàn bộ
-
+            return; // thành công toàn bộ
       } catch (error) {
-            console.error('Error updating records:', error);
+            console.log('Error updating records:', error);
             return false; // thất bại
       }
 }
@@ -267,7 +266,9 @@ export const updateAllRecordsInTableWithRole = async (dynamoDBClient: any, users
       try {
             console.log('Set ROLE LOOP');
             const scanCommand = new ScanCommand({ TableName: usersTable });
+            console.log('scanCommand', scanCommand);
             const scanResult = await dynamoDBClient.send(scanCommand);
+            console.log('scanResult', scanResult);
             const items = scanResult.Items;
             if (!items || items.length === 0) {
                   console.log("No items found in the table.");
@@ -277,7 +278,7 @@ export const updateAllRecordsInTableWithRole = async (dynamoDBClient: any, users
             for (const item of items) {
                   const primaryKey = item.id;
                   if (!primaryKey) {
-                        console.error("Item missing primary key:", item);
+                        console.log("Item missing primary key:", item);
                         continue;
                   }
 
@@ -290,11 +291,13 @@ export const updateAllRecordsInTableWithRole = async (dynamoDBClient: any, users
                         },
                   });
 
-                  await dynamoDBClient.send(updateCommand);
+                  console.log('updateCommand', updateCommand);
+                  const result = await dynamoDBClient.send(updateCommand);
+                  console.log('result', result);
             }
-            return true;
+            return;
       } catch (error) {
-            console.error('Error updating records with role:', error);
+            console.log('Error updating records with role:', error);
             throw error;
       }
 }

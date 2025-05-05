@@ -14,8 +14,7 @@ export const setAvatarDemo = async (dynamoDb:any, s3:any, newBucket:any, usersTa
             //TODO: save newImage vào bucket newBucket
             const copyCsvToNewBucket = await copyItemToNewBucket(s3, newBucket, newImageUrl, path);
             console.log('copyCsvToNewBucket123', copyCsvToNewBucket);
-            return true;
-
+            return;
       } catch (error) {
             console.error('Call Lambda Avatar Fail', error);
             throw error;
