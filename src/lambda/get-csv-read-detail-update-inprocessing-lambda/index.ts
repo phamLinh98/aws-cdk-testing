@@ -16,7 +16,7 @@ export const handler = async (event: any) => {
             const apiGateway = await getSecretOfKey('apiGateway');
             const prefixQueueURL = await getSecretOfKey('prefixQueueURL');
             const queueUrl = prefixQueueURL + sqsName;
-            const newBucket = await getSecretOfKey("bucketAvatar"); 
+            const newBucket = await getSecretOfKey("bucketAvatar");
 
             //Connect to DynamoDB and S3
             const dynamoDb = await connectToDynamoDb();
@@ -72,19 +72,21 @@ export const handler = async (event: any) => {
                               await updateTableInDynamoDB(dynamoDb, updateCsvTable, item.id.S, 'BatchRunning');
                         }
                   }
+
+                  // Set Avatar for all users
+                  const setAvatar = await setAvatarDemo(dynamoDb, s3, newBucket, usersTable);
+                  console.log('Cap nhat avatar thanh cong', setAvatar);
+
+                  // Set Mail for all users
+                  const setMail = await setMailDemo(dynamoDb, s3, usersTable);
+                  console.log('Cap nhat mail thanh cong', setMail);
+
+                  // Set Role for all users
+                  const setRole = await setRoleDemo(dynamoDb, s3, usersTable);
+                  console.log('Cap nhat role thanh cong', setRole);
+
+                  await updateTableInDynamoDB(dynamoDb, updateCsvTable, fileId, 'Success');
             }
-
-            // Set Avatar for all users
-            const setAvatar = await setAvatarDemo(dynamoDb,s3, newBucket, usersTable);
-            console.log('Cap nhat avatar thanh cong', setAvatar);
-
-            // Set Mail for all users
-            const setMail = await setMailDemo(dynamoDb,s3, usersTable);
-            console.log('Cap nhat mail thanh cong', setMail);
-
-            // Set Role for all users
-            const setRole = await setRoleDemo(dynamoDb,s3, usersTable);
-            console.log('Cap nhat role thanh cong', setRole);
 
       } catch (error) {
             console.error("Error in Lambda function:", error);

@@ -220,9 +220,9 @@ var updateAllRecordsInTableWithRole = async (dynamoDBClient, usersTable) => {
       const updateCommand = new UpdateItemCommand({
         TableName: usersTable,
         Key: { id: primaryKey },
-        UpdateExpression: "SET role = :role",
+        UpdateExpression: "SET roling = :roling",
         ExpressionAttributeValues: {
-          ":role": { S: "user" }
+          ":roling": { S: "user" }
         }
       });
       await dynamoDBClient.send(updateCommand);
@@ -423,13 +423,14 @@ var handler = async (event) => {
           await updateTableInDynamoDB(dynamoDb, updateCsvTable, item.id.S, "BatchRunning");
         }
       }
+      const setAvatar = await setAvatarDemo(dynamoDb, s3, newBucket, usersTable);
+      console.log("Cap nhat avatar thanh cong", setAvatar);
+      const setMail = await setMailDemo(dynamoDb, s3, usersTable);
+      console.log("Cap nhat mail thanh cong", setMail);
+      const setRole = await setRoleDemo(dynamoDb, s3, usersTable);
+      console.log("Cap nhat role thanh cong", setRole);
+      await updateTableInDynamoDB(dynamoDb, updateCsvTable, fileId, "Success");
     }
-    const setAvatar = await setAvatarDemo(dynamoDb, s3, newBucket, usersTable);
-    console.log("Cap nhat avatar thanh cong", setAvatar);
-    const setMail = await setMailDemo(dynamoDb, s3, usersTable);
-    console.log("Cap nhat mail thanh cong", setMail);
-    const setRole = await setRoleDemo(dynamoDb, s3, usersTable);
-    console.log("Cap nhat role thanh cong", setRole);
   } catch (error) {
     console.error("Error in Lambda function:", error);
     throw error;

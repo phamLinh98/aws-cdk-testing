@@ -284,9 +284,9 @@ export const updateAllRecordsInTableWithRole = async (dynamoDBClient: any, users
                   const updateCommand = new UpdateItemCommand({
                         TableName: usersTable,
                         Key: { id: primaryKey },
-                        UpdateExpression: "SET role = :role",
+                        UpdateExpression: "SET roling = :roling",
                         ExpressionAttributeValues: {
-                              ":role": { S: "user" },
+                              ":roling": { S: "user" },
                         },
                   });
 
