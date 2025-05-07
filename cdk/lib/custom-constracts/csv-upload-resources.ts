@@ -49,8 +49,8 @@ export const createNewDeadLetterQueue = (
 //TODO: Setting SQS Batch Size and Max Concurrency
 export const settingSqsBatchSizeCurrentcy = (
   queueName: any,
-  batchSize: any,
-  maxConcurrency: any,
+  batchSize: number,
+  maxConcurrency: number,
 ) => {
   return new cdk.aws_lambda_event_sources.SqsEventSource(queueName, {
     batchSize: batchSize,
@@ -59,7 +59,7 @@ export const settingSqsBatchSizeCurrentcy = (
 };
 
 //TODO; Setting Policy for Service
-export const settingNewPolicy = (actionList: any, queueArn: any) => {
+export const settingNewPolicy = (actionList: any[], queueArn: any[]) => {
   return new cdk.aws_iam.PolicyStatement({
     actions: actionList,
     resources: queueArn,
@@ -96,7 +96,7 @@ export const createNewLambdaFunction = (
 
 //TODO: Setting A List Service Can Read/Write A Service
 export const grantServiceListServiceReadWriteAnService = (
-  listService: any,
+  listService: any[],
   policy: string,
   service: any,
 ) => {
@@ -108,8 +108,8 @@ export const grantServiceListServiceReadWriteAnService = (
 //TODO: Setting A Service Can Read/Write A List Service
 export const grantServiceAnServiceReadWriteAListService = (
   service: any,
-  policy: any,
-  ListService: any,
+  policy: string,
+  ListService: any[],
 ) => {
   return ListService.forEach((list: any) => {
     service[policy](list);
@@ -117,7 +117,7 @@ export const grantServiceAnServiceReadWriteAListService = (
 };
 
 //TODO; Setting S3 Notification When New file add to S3
-export const settingS3Notification = (bucketName: any, filterFile: any) => {
+export const settingS3Notification = (bucketName: cdk.aws_s3.Bucket, filterFile: string) => {
   return new cdk.aws_lambda_event_sources.S3EventSource(bucketName, {
     events: [cdk.aws_s3.EventType.OBJECT_CREATED],
     filters: [{ suffix: filterFile }],
@@ -125,7 +125,7 @@ export const settingS3Notification = (bucketName: any, filterFile: any) => {
 };
 
 //TODO: Setting CORS for API Gateway
-export const settingApiGatewayRoleCors = (scope: any, apiGatewayName: any) => {
+export const settingApiGatewayRoleCors = (scope: any, apiGatewayName: string) => {
   return new cdk.aws_apigateway.RestApi(scope, apiGatewayName, {
     restApiName: apiGatewayName,
     // enable CORS for the API

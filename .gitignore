@@ -4,3 +4,4 @@ node_modules
 cdk.out
 src/build
 .idea
+.env

@@ -115,7 +115,7 @@ var updateUsersTableWitInfoFromCSV = async (dynamoDbClient, userData, fileId, ta
       await dynamoDbClient.send(putCommand);
     }
   } catch (dynamoError) {
-    console.error("Cap nhat Users that bai", dynamoError);
+    console.log("Cap nhat Users that bai", dynamoError);
     throw dynamoError;
   }
 };
@@ -163,7 +163,7 @@ var updateAllRecordsInTableWithAvatar = async (dynamoDBClient, imageUrl, usersTa
       });
       await dynamoDBClient.send(updateCommand);
     }
-    return true;
+    return;
   } catch (error) {
     console.error("Error updating records with avatar:", error);
     throw error;
@@ -177,7 +177,7 @@ var updateAllRecordsInTableWithEmail = async (dynamoDBClient, tableName) => {
     const items = scanResult.Items;
     if (!items || items.length === 0) {
       console.log("No items found in the table.");
-      return true;
+      return;
     }
     for (const item of items) {
       const primaryKey = item.id;
@@ -195,9 +195,9 @@ var updateAllRecordsInTableWithEmail = async (dynamoDBClient, tableName) => {
       });
       await dynamoDBClient.send(updateCommand);
     }
-    return true;
+    return;
   } catch (error) {
-    console.error("Error updating records:", error);
+    console.log("Error updating records:", error);
     return false;
   }
 };
@@ -205,7 +205,9 @@ var updateAllRecordsInTableWithRole = async (dynamoDBClient, usersTable) => {
   try {
     console.log("Set ROLE LOOP");
     const scanCommand = new ScanCommand({ TableName: usersTable });
+    console.log("scanCommand", scanCommand);
     const scanResult = await dynamoDBClient.send(scanCommand);
+    console.log("scanResult", scanResult);
     const items = scanResult.Items;
     if (!items || items.length === 0) {
       console.log("No items found in the table.");
@@ -214,7 +216,7 @@ var updateAllRecordsInTableWithRole = async (dynamoDBClient, usersTable) => {
     for (const item of items) {
       const primaryKey = item.id;
       if (!primaryKey) {
-        console.error("Item missing primary key:", item);
+        console.log("Item missing primary key:", item);
         continue;
       }
       const updateCommand = new UpdateItemCommand({
@@ -225,11 +227,13 @@ var updateAllRecordsInTableWithRole = async (dynamoDBClient, usersTable) => {
           ":roling": { S: "user" }
         }
       });
-      await dynamoDBClient.send(updateCommand);
+      console.log("updateCommand", updateCommand);
+      const result = await dynamoDBClient.send(updateCommand);
+      console.log("result", result);
     }
-    return true;
+    return;
   } catch (error) {
-    console.error("Error updating records with role:", error);
+    console.log("Error updating records with role:", error);
     throw error;
   }
 };
@@ -315,7 +319,7 @@ var setAvatarDemo = async (dynamoDb, s3, newBucket, usersTable) => {
     console.log("Update Avatar thanh cong", updateAvatar);
     const copyCsvToNewBucket = await copyItemToNewBucket(s3, newBucket, newImageUrl, path);
     console.log("copyCsvToNewBucket123", copyCsvToNewBucket);
-    return true;
+    return;
   } catch (error) {
     console.error("Call Lambda Avatar Fail", error);
     throw error;

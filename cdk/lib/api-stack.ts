@@ -76,66 +76,85 @@ export class ApiStack extends cdk.Stack {
     const listTableInDynamoDB = [usersTable, uploadCsvTable];
     grantServiceListServiceReadWriteAnService(
       listTableInDynamoDB,
-      'grantReadWriteData',
+      env.grantRole.readWriteData,
       createPresignedUrlLambda,
     );
 
+    const GET_STATUS_FROM_DYNAMODB = {
+      path: BUILD_PATH + '/get-status',
+      excludeFunction: 'get-status-from-dynamodb-lambda.mjs',
+      lambdaHander: 'get-status-from-dynamodb-lambda.handler',
+    };
     const getStatusFromDynamoDBLambda = createNewLambdaFunction(
       this,
-      'GetStatusFromDynamoDBLambda',
-      'get-status-from-dynamodb-lambda',
-      './src/rebuild/get-status',
-      'get-status-from-dynamodb-lambda.mjs',
-      'get-status-from-dynamodb-lambda.handler',
+      env.getStatusFromDynamoDBLambda.idLambda,
+      env.getStatusFromDynamoDBLambda.lambdaName,
+      GET_STATUS_FROM_DYNAMODB.path,
+      GET_STATUS_FROM_DYNAMODB.excludeFunction,
+      GET_STATUS_FROM_DYNAMODB.lambdaHander,
     );
 
     // getStatusFromDynamoDBLambda can read and write dynamoDb
     grantServiceListServiceReadWriteAnService(
       listTableInDynamoDB,
-      'grantReadWriteData',
+      env.grantRole.readWriteData,
       getStatusFromDynamoDBLambda,
     );
 
     //TODO: create a new lambda function name get-batchid-update-status-to-uploaded get source from src/rebuild/get-batchid-uploaded
+    const GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED = {
+      path: BUILD_PATH + '/get-batchid-uploaded',
+      excludeFunction: 'get-batchid-update-status-to-uploaded.mjs',
+      lambdaHander: 'get-batchid-update-status-to-uploaded.handler',
+    };
     const getBatchIdUpdateStatusToUploadedLambda = createNewLambdaFunction(
       this,
-      'GetBatchIdUpdateStatusToUploadedLambda',
-      'get-batchid-update-status-to-uploaded',
-      './src/rebuild/get-batchid-uploaded',
-      'get-batchid-update-status-to-uploaded.mjs',
-      'get-batchid-update-status-to-uploaded.handler',
+      env.getBatchIdUpdateStatusToUploadedIdLambda.idLambda,
+      env.getBatchIdUpdateStatusToUploadedIdLambda.lambdaName,
+      GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED.path,
+      GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED.excludeFunction,
+      GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED.lambdaHander,
     );
 
     //TODO: getBatchIdUpdateStatusToUploadedLambda can read and write dynamoDb
     grantServiceListServiceReadWriteAnService(
       listTableInDynamoDB,
-      'grantReadWriteData',
+      env.grantRole.readWriteData,
       getBatchIdUpdateStatusToUploadedLambda,
     );
 
     //TODO: create a new lambda function name get-csv-read-detail-update-inprocessing-lambda get source from src/rebuild/get-batchid-uploaded
+    const GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA = {
+      path: BUILD_PATH + '/get-csv-read-detail',
+      excludeFunction: 'get-csv-read-detail-update-inprocessing-lambda.mjs',
+      lambdaHander: 'get-csv-read-detail-update-inprocessing-lambda.handler',
+    };
+    // 'GetCsvReadDetailUpdateInProcessingLambda',
+    //   'get-csv-read-detail-update-inprocessing-lambda',
+    //   './src/rebuild/get-csv-read-detail',
+    //   'get-csv-read-detail-update-inprocessing-lambda.mjs',
+    //   'get-csv-read-detail-update-inprocessing-lambda.handler',
     const getCsvReadDetailUpdateInProcessingLambda = createNewLambdaFunction(
       this,
-      'GetCsvReadDetailUpdateInProcessingLambda',
-      'get-csv-read-detail-update-inprocessing-lambda',
-      './src/rebuild/get-csv-read-detail',
-      'get-csv-read-detail-update-inprocessing-lambda.mjs',
-      'get-csv-read-detail-update-inprocessing-lambda.handler',
+      env.getCsvReadDetailUpdateInProcessingLambda.idLambda,
+      env.getCsvReadDetailUpdateInProcessingLambda.lambdaName,
+      GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA.path,
+      GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA.excludeFunction,
+      GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA.lambdaHander,
     );
     grantServiceListServiceReadWriteAnService(
       listTableInDynamoDB,
-      'grantReadWriteData',
+      env.grantRole.readWriteData,
       getCsvReadDetailUpdateInProcessingLambda,
     );
 
     //TODO: Add policy IAM to Lambda function to access SQS
-    const listSqsRoleInIAM = [
-      'sqs:SendMessage',
-      'sqs:ReceiveMessage',
-      'sqs:DeleteMessage',
-      'sqs:GetQueueAttributes',
-      'sqs:ListQueues',
-    ];
+    // 'sqs:SendMessage',
+    // 'sqs:ReceiveMessage',
+    // 'sqs:DeleteMessage',
+    // 'sqs:GetQueueAttributes',
+    // 'sqs:ListQueues',
+    const listSqsRoleInIAM = JSON.parse(env.listRoleInIAM.sqsRoleList);
     const sqsArn = [mainQueue.queueArn];
     const sqsPolicy = settingNewPolicy(listSqsRoleInIAM, sqsArn);
 
@@ -151,44 +170,69 @@ export class ApiStack extends cdk.Stack {
 
     grantServiceListServiceReadWriteAnService(
       listLambdaFunction,
-      'addToRolePolicy',
+      env.grantRole.addToRolePolicy,
       listQueuesPolicy,
     );
-    grantServiceListServiceReadWriteAnService(listLambdaFunction, 'addToRolePolicy', sqsPolicy);
-    grantServiceAnServiceReadWriteAListService(mainQueue, 'grantSendMessages', listLambdaFunction);
+    grantServiceListServiceReadWriteAnService(
+      listLambdaFunction,
+      env.grantRole.addToRolePolicy,
+      sqsPolicy,
+    );
+    grantServiceAnServiceReadWriteAListService(
+      mainQueue,
+      env.grantRole.grantSendMessages,
+      listLambdaFunction,
+    );
 
     // Add Policy to lambda function to access DynamoDB
-    const listDynamoRoleInIAM = ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:UpdateItem'];
+    // dynamodb:PutItem', 
+    // 'dynamodb:GetItem', 
+    // 'dynamodb:UpdateItem'
+    const listDynamoRoleInIAM = JSON.parse(env.listRoleInIAM.dynamoRoleList);
     const dynamoDbArn = [usersTable.tableArn, uploadCsvTable.tableArn];
     const dynamoDbPolicy = settingNewPolicy(listDynamoRoleInIAM, dynamoDbArn);
     grantServiceListServiceReadWriteAnService(
       listLambdaFunction,
-      'addToRolePolicy',
+      env.grantRole.addToRolePolicy,
       dynamoDbPolicy,
     );
     grantServiceAnServiceReadWriteAListService(
       usersTable,
-      'grantReadWriteData',
+      env.grantRole.readWriteData,
       listLambdaFunction,
     );
     grantServiceAnServiceReadWriteAListService(
       uploadCsvTable,
-      'grantReadWriteData',
+      env.grantRole.readWriteData,
       listLambdaFunction,
     );
 
     //TODO: adding connect role to lambda function to access S3
-    grantServiceAnServiceReadWriteAListService(csvBucket, 'grantReadWrite', listLambdaFunction);
+    grantServiceAnServiceReadWriteAListService(
+      csvBucket,
+      env.grantRole.grantReadWrite,
+      listLambdaFunction,
+    );
     // grantServiceAnServiceReadWriteAListService(bucketAvatarS3, 'grantReadWrite', listLambdaFunction);
 
     // Add policy to Lambda function to access S3 bucket
-    const listS3RoleInIAM = ['s3:PutObject', 's3:GetObject'];
+    // s3:PutObject', 
+    // 's3:GetObject'
+    const listS3RoleInIAM = JSON.parse(env.listRoleInIAM.s3RoleList);
     const s3Arn = [csvBucket.bucketArn + '/*'];
     const s3Policy = settingNewPolicy(listS3RoleInIAM, s3Arn);
-    grantServiceListServiceReadWriteAnService(listLambdaFunction, 'addToRolePolicy', s3Policy);
+    grantServiceListServiceReadWriteAnService(
+      listLambdaFunction,
+      env.grantRole.addToRolePolicy,
+      s3Policy,
+    );
 
     //TODO: SQS trigger Lambda getCsvReadDetailUpdateInProcessingLambda
-    const queueSQSTrigger = settingSqsBatchSizeCurrentcy(mainQueue, 10, 5);
+    const queueSQSTrigger = settingSqsBatchSizeCurrentcy(
+      mainQueue,
+      +env.mainQueue.batchSize,
+      +env.mainQueue.maxCurrency,
+    );
     getCsvReadDetailUpdateInProcessingLambda.addEventSource(queueSQSTrigger);
 
     //TODO: Lambda getBatchIdUpdateStatusToUploadedLambda triggered by S3 csvBucket when a new file is uploaded
@@ -196,7 +240,7 @@ export class ApiStack extends cdk.Stack {
     getBatchIdUpdateStatusToUploadedLambda.addEventSource(bucketCsvS3Notification);
 
     //TODO: Create an API Gateway name linhclass-api-gateway
-    const apiName = settingApiGatewayRoleCors(this, 'LinhClassApiGateway');
+    const apiName = settingApiGatewayRoleCors(this, env.apiGateway.idLambda);
 
     //TODO: GET get-url endpoint calling createPresignedUrlLambda
     const getUrlIntegration = setupApiGatewayForLambdaFn(createPresignedUrlLambda);
@@ -207,6 +251,6 @@ export class ApiStack extends cdk.Stack {
     apiName.root.addResource('get-status').addMethod('GET', getStatusIntegration);
 
     //TODO setting secretManager for all lambda function using secret
-    grantServiceAnServiceReadWriteAListService(secret, 'grantRead', listLambdaFunction);
+    grantServiceAnServiceReadWriteAListService(secret, env.grantRole.grandRead, listLambdaFunction);
   }
 }

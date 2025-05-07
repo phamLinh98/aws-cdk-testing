@@ -15,7 +15,7 @@ Resources:
               - DELETE
               - HEAD
             AllowedOrigins:
-              - http://localhost:5173
+              - "*"
             ExposedHeaders:
               - ETag
       VersioningConfiguration:
@@ -44,21 +44,21 @@ Resources:
                     Value: .csv
             LambdaFunctionArn:
               Fn::GetAtt:
-                - GetBatchIdUpdateStatusToUploadedLambdaC4E69F6A
+                - GetBatchIdUpdateStatusToUploadedIdLambda5E5C04D7
                 - Arn
       Managed: true
       SkipDestinationValidation: false
     DependsOn:
-      - LinhClassCsvBucketAllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedLambda091E4338B4162627
+      - LinhClassCsvBucketAllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedIdLambdaACA2B3D6D4F34176
     Metadata:
       aws:cdk:path: ServerlessApiStack/LinhClassCsvBucket/Notifications/Resource
-  LinhClassCsvBucketAllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedLambda091E4338B4162627:
+  LinhClassCsvBucketAllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedIdLambdaACA2B3D6D4F34176:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
       FunctionName:
         Fn::GetAtt:
-          - GetBatchIdUpdateStatusToUploadedLambdaC4E69F6A
+          - GetBatchIdUpdateStatusToUploadedIdLambda5E5C04D7
           - Arn
       Principal: s3.amazonaws.com
       SourceAccount: "650251698778"
@@ -67,7 +67,7 @@ Resources:
           - LinhClassCsvBucket8A50560C
           - Arn
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassCsvBucket/AllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedLambda091E4338
+      aws:cdk:path: ServerlessApiStack/LinhClassCsvBucket/AllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedIdLambdaACA2B3D6
   LinhClassDeadLetterQueue7A0647EC:
     Type: AWS::SQS::Queue
     Properties:
@@ -77,7 +77,7 @@ Resources:
     DeletionPolicy: Delete
     Metadata:
       aws:cdk:path: ServerlessApiStack/LinhClassDeadLetterQueue/Resource
-  LinhClassLambdaCallToQueueFD2281BE:
+  LinhClassMainQueue02FE2B0D:
     Type: AWS::SQS::Queue
     Properties:
       MessageRetentionPeriod: 1209600
@@ -92,7 +92,7 @@ Resources:
     UpdateReplacePolicy: Delete
     DeletionPolicy: Delete
     Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassLambdaCallToQueue/Resource
+      aws:cdk:path: ServerlessApiStack/LinhClassMainQueue/Resource
   UsersTable9725E9C8:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -105,7 +105,7 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
-      TableName: Users
+      TableName: users
     UpdateReplacePolicy: Delete
     DeletionPolicy: Delete
     Metadata:
@@ -200,7 +200,7 @@ Resources:
             Effect: Allow
             Resource:
               Fn::GetAtt:
-                - LinhClassLambdaCallToQueueFD2281BE
+                - LinhClassMainQueue02FE2B0D
                 - Arn
           - Action:
               - sqs:SendMessage
@@ -209,7 +209,7 @@ Resources:
             Effect: Allow
             Resource:
               Fn::GetAtt:
-                - LinhClassLambdaCallToQueueFD2281BE
+                - LinhClassMainQueue02FE2B0D
                 - Arn
           - Action:
               - dynamodb:PutItem
@@ -366,7 +366,7 @@ Resources:
             Effect: Allow
             Resource:
               Fn::GetAtt:
-                - LinhClassLambdaCallToQueueFD2281BE
+                - LinhClassMainQueue02FE2B0D
                 - Arn
           - Action:
               - sqs:SendMessage
@@ -375,7 +375,7 @@ Resources:
             Effect: Allow
             Resource:
               Fn::GetAtt:
-                - LinhClassLambdaCallToQueueFD2281BE
+                - LinhClassMainQueue02FE2B0D
                 - Arn
           - Action:
               - dynamodb:PutItem
@@ -459,7 +459,7 @@ Resources:
       aws:asset:path: asset.633f507b34e9f8c82ec287f20c04ad683f7f4182f1c315c98175b57ff4dba088
       aws:asset:is-bundled: false
       aws:asset:property: Code
-  GetBatchIdUpdateStatusToUploadedLambdaServiceRoleA9EC421A:
+  GetBatchIdUpdateStatusToUploadedIdLambdaServiceRoleC01AB52F:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -476,8 +476,8 @@ Resources:
               - Ref: AWS::Partition
               - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
     Metadata:
-      aws:cdk:path: ServerlessApiStack/GetBatchIdUpdateStatusToUploadedLambda/ServiceRole/Resource
-  GetBatchIdUpdateStatusToUploadedLambdaServiceRoleDefaultPolicyE35F5524:
+      aws:cdk:path: ServerlessApiStack/GetBatchIdUpdateStatusToUploadedIdLambda/ServiceRole/Resource
+  GetBatchIdUpdateStatusToUploadedIdLambdaServiceRoleDefaultPolicy7E8001C8:
     Type: AWS::IAM::Policy
     Properties:
       PolicyDocument:
@@ -532,7 +532,7 @@ Resources:
             Effect: Allow
             Resource:
               Fn::GetAtt:
-                - LinhClassLambdaCallToQueueFD2281BE
+                - LinhClassMainQueue02FE2B0D
                 - Arn
           - Action:
               - sqs:SendMessage
@@ -541,7 +541,7 @@ Resources:
             Effect: Allow
             Resource:
               Fn::GetAtt:
-                - LinhClassLambdaCallToQueueFD2281BE
+                - LinhClassMainQueue02FE2B0D
                 - Arn
           - Action:
               - dynamodb:PutItem
@@ -599,29 +599,29 @@ Resources:
                   - Ref: AWS::Partition
                   - :secretsmanager:ap-northeast-1:650251698778:secret:HitoEnvSecret-??????
         Version: "2012-10-17"
-      PolicyName: GetBatchIdUpdateStatusToUploadedLambdaServiceRoleDefaultPolicyE35F5524
+      PolicyName: GetBatchIdUpdateStatusToUploadedIdLambdaServiceRoleDefaultPolicy7E8001C8
       Roles:
-        - Ref: GetBatchIdUpdateStatusToUploadedLambdaServiceRoleA9EC421A
+        - Ref: GetBatchIdUpdateStatusToUploadedIdLambdaServiceRoleC01AB52F
     Metadata:
-      aws:cdk:path: ServerlessApiStack/GetBatchIdUpdateStatusToUploadedLambda/ServiceRole/DefaultPolicy/Resource
-  GetBatchIdUpdateStatusToUploadedLambdaC4E69F6A:
+      aws:cdk:path: ServerlessApiStack/GetBatchIdUpdateStatusToUploadedIdLambda/ServiceRole/DefaultPolicy/Resource
+  GetBatchIdUpdateStatusToUploadedIdLambda5E5C04D7:
     Type: AWS::Lambda::Function
     Properties:
       Code:
         S3Bucket: cdk-hnb659fds-assets-650251698778-ap-northeast-1
         S3Key: bcfc1191713f15d0ee39db99bee82d315ae8770a1f0a7de1f03a6bbff3ca0415.zip
-      FunctionName: get-batchid-update-status-to-uploaded
+      FunctionName: get-batch-id-update-status-to-uploaded
       Handler: get-batchid-update-status-to-uploaded.handler
       Role:
         Fn::GetAtt:
-          - GetBatchIdUpdateStatusToUploadedLambdaServiceRoleA9EC421A
+          - GetBatchIdUpdateStatusToUploadedIdLambdaServiceRoleC01AB52F
           - Arn
       Runtime: nodejs18.x
     DependsOn:
-      - GetBatchIdUpdateStatusToUploadedLambdaServiceRoleDefaultPolicyE35F5524
-      - GetBatchIdUpdateStatusToUploadedLambdaServiceRoleA9EC421A
+      - GetBatchIdUpdateStatusToUploadedIdLambdaServiceRoleDefaultPolicy7E8001C8
+      - GetBatchIdUpdateStatusToUploadedIdLambdaServiceRoleC01AB52F
     Metadata:
-      aws:cdk:path: ServerlessApiStack/GetBatchIdUpdateStatusToUploadedLambda/Resource
+      aws:cdk:path: ServerlessApiStack/GetBatchIdUpdateStatusToUploadedIdLambda/Resource
       aws:asset:path: asset.bcfc1191713f15d0ee39db99bee82d315ae8770a1f0a7de1f03a6bbff3ca0415
       aws:asset:is-bundled: false
       aws:asset:property: Code
@@ -698,7 +698,7 @@ Resources:
             Effect: Allow
             Resource:
               Fn::GetAtt:
-                - LinhClassLambdaCallToQueueFD2281BE
+                - LinhClassMainQueue02FE2B0D
                 - Arn
           - Action:
               - sqs:SendMessage
@@ -707,7 +707,7 @@ Resources:
             Effect: Allow
             Resource:
               Fn::GetAtt:
-                - LinhClassLambdaCallToQueueFD2281BE
+                - LinhClassMainQueue02FE2B0D
                 - Arn
           - Action:
               - dynamodb:PutItem
@@ -763,7 +763,7 @@ Resources:
             Effect: Allow
             Resource:
               Fn::GetAtt:
-                - LinhClassLambdaCallToQueueFD2281BE
+                - LinhClassMainQueue02FE2B0D
                 - Arn
           - Action:
               - secretsmanager:GetSecretValue
@@ -786,7 +786,7 @@ Resources:
     Properties:
       Code:
         S3Bucket: cdk-hnb659fds-assets-650251698778-ap-northeast-1
-        S3Key: a61fe09e51634f231cefe82ee50460f6ff7d4b0c60a3eaf77d0149c1101e6389.zip
+        S3Key: b36ad1c8e088885dfd3581242ffe5e1fa4199cb283b6321ec84e917a6dcabd15.zip
       FunctionName: get-csv-read-detail-update-inprocessing-lambda
       Handler: get-csv-read-detail-update-inprocessing-lambda.handler
       Role:
@@ -799,23 +799,23 @@ Resources:
       - GetCsvReadDetailUpdateInProcessingLambdaServiceRoleFF04FF36
     Metadata:
       aws:cdk:path: ServerlessApiStack/GetCsvReadDetailUpdateInProcessingLambda/Resource
-      aws:asset:path: asset.a61fe09e51634f231cefe82ee50460f6ff7d4b0c60a3eaf77d0149c1101e6389
+      aws:asset:path: asset.b36ad1c8e088885dfd3581242ffe5e1fa4199cb283b6321ec84e917a6dcabd15
       aws:asset:is-bundled: false
       aws:asset:property: Code
-  GetCsvReadDetailUpdateInProcessingLambdaSqsEventSourceServerlessApiStackLinhClassLambdaCallToQueue52FD85AE2793E404:
+  GetCsvReadDetailUpdateInProcessingLambdaSqsEventSourceServerlessApiStackLinhClassMainQueue1E12F19C9F41D582:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
       BatchSize: 10
       EventSourceArn:
         Fn::GetAtt:
-          - LinhClassLambdaCallToQueueFD2281BE
+          - LinhClassMainQueue02FE2B0D
           - Arn
       FunctionName:
         Ref: GetCsvReadDetailUpdateInProcessingLambda97C0646D
       ScalingConfig:
         MaximumConcurrency: 5
     Metadata:
-      aws:cdk:path: ServerlessApiStack/GetCsvReadDetailUpdateInProcessingLambda/SqsEventSource:ServerlessApiStackLinhClassLambdaCallToQueue52FD85AE/Resource
+      aws:cdk:path: ServerlessApiStack/GetCsvReadDetailUpdateInProcessingLambda/SqsEventSource:ServerlessApiStackLinhClassMainQueue1E12F19C/Resource
   BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC:
     Type: AWS::IAM::Role
     Properties:
