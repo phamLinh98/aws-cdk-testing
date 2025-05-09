@@ -3,16 +3,22 @@ import { Construct } from 'constructs';
 import { configCors, configCorsApiGateway } from '../../utils/cors';
 import { envConfig } from '../config/env';
 
-export const createNewBucketS3 = (scope: Construct, idBucket: string, bucketName: string) => {
+/**
+ * Create a new S3 bucket
+ */
+export function createNewBucketS3(scope: Construct, idBucket: string, bucketName: string) {
   return new cdk.aws_s3.Bucket(scope, idBucket, {
     bucketName: bucketName,
     versioned: true,
     removalPolicy: cdk.RemovalPolicy.DESTROY,
     cors: configCors(envConfig.corsOrigin),
   });
-};
+}
 
-export const createNewSQS = (
+/**
+ * Create a new SQS queue
+ */
+export function createNewSQS(
   scope: Construct,
   idQueue: string,
   queueName: string,
@@ -21,7 +27,7 @@ export const createNewSQS = (
   deadLetterQueue: cdk.aws_sqs.IQueue,
   maxReceiveCount: number = 5,
   ...props: any
-) => {
+) {
   return new cdk.aws_sqs.Queue(scope, idQueue, {
     queueName: queueName, // the name of the queue
     retentionPeriod: cdk.Duration.days(maxTime), // the time that a message is retained in the queue
@@ -32,58 +38,69 @@ export const createNewSQS = (
     },
     ...props,
   });
-};
+}
 
-export const createNewDeadLetterQueue = (
+/**
+ * Create a new dead-letter queue
+ */
+export function createNewDeadLetterQueue(
   scope: Construct,
   idQueue: string,
   queueName: string,
   maxTime: number,
-) => {
+) {
   return new cdk.aws_sqs.Queue(scope, idQueue, {
     queueName: queueName,
     retentionPeriod: cdk.Duration.days(maxTime),
   });
-};
+}
 
-//TODO: Setting SQS Batch Size and Max Concurrency
-export const settingSqsBatchSizeCurrentcy = (
+/**
+ * Create a new SQS event source
+ */
+export function settingSqsBatchSizeCurrentcy(
   queueName: any,
   batchSize: number,
   maxConcurrency: number,
-) => {
+) {
   return new cdk.aws_lambda_event_sources.SqsEventSource(queueName, {
     batchSize: batchSize,
     maxConcurrency: maxConcurrency,
   });
-};
+}
 
-//TODO; Setting Policy for Service
-export const settingNewPolicy = (actionList: any[], queueArn: any[]) => {
+/**
+ * Create a new Policy statement
+ */
+export function settingNewPolicy(actionList: any[], queueArn: any[]) {
   return new cdk.aws_iam.PolicyStatement({
     actions: actionList,
     resources: queueArn,
   });
-};
+}
 
-//TODO: Create new table in DynamoDB
-export const createNewTableDynamoDB = (scope: Construct, idTable: string, tableName: string) => {
+/**
+ * Create a new DynamoDB table
+ */
+export function createNewTableDynamoDB(scope: Construct, idTable: string, tableName: string) {
   return new cdk.aws_dynamodb.Table(scope, idTable, {
     tableName: tableName,
     partitionKey: { name: 'id', type: cdk.aws_dynamodb.AttributeType.STRING },
     removalPolicy: cdk.RemovalPolicy.DESTROY,
   });
-};
+}
 
-//TODO: Create new Lambda function
-export const createNewLambdaFunction = (
+/**
+ * Create a new Lambda function
+ */
+export function createNewLambdaFunction(
   scope: Construct,
   idLambda: string,
   lambdaName: string,
   path: string,
   excludeFunction: string,
   lambdaHander: string,
-) => {
+) {
   return new cdk.aws_lambda.Function(scope, idLambda, {
     functionName: lambdaName,
     runtime: cdk.aws_lambda.Runtime.NODEJS_18_X,
@@ -92,40 +109,48 @@ export const createNewLambdaFunction = (
     }),
     handler: lambdaHander,
   });
-};
+}
 
-//TODO: Setting A List Service Can Read/Write A Service
-export const grantServiceListServiceReadWriteAnService = (
+/**
+ * Grant read/write permissions from a List of services to a service
+ */
+export function grantServiceListServiceReadWriteAnService(
   listService: any[],
   policy: string,
   service: any,
-) => {
+) {
   return listService.forEach((list: any) => {
     list[policy](service);
   });
-};
+}
 
-//TODO: Setting A Service Can Read/Write A List Service
-export const grantServiceAnServiceReadWriteAListService = (
+/**
+ * Grant read/write permissions from a service to a List of services
+ */
+export function grantServiceAnServiceReadWriteAListService(
   service: any,
   policy: string,
   ListService: any[],
-) => {
+) {
   return ListService.forEach((list: any) => {
     service[policy](list);
   });
-};
+}
 
-//TODO; Setting S3 Notification When New file add to S3
-export const settingS3Notification = (bucketName: cdk.aws_s3.Bucket, filterFile: string) => {
+/**
+ * Setting S3 notification
+ */
+export function settingS3Notification(bucketName: cdk.aws_s3.Bucket, filterFile: string) {
   return new cdk.aws_lambda_event_sources.S3EventSource(bucketName, {
     events: [cdk.aws_s3.EventType.OBJECT_CREATED],
     filters: [{ suffix: filterFile }],
   });
-};
+}
 
-//TODO: Setting CORS for API Gateway
-export const settingApiGatewayRoleCors = (scope: any, apiGatewayName: string) => {
+/**
+ * Setting API Gateway with CORS
+ */
+export function settingApiGatewayRoleCors(scope: any, apiGatewayName: string) {
   return new cdk.aws_apigateway.RestApi(scope, apiGatewayName, {
     restApiName: apiGatewayName,
     // enable CORS for the API
@@ -135,9 +160,11 @@ export const settingApiGatewayRoleCors = (scope: any, apiGatewayName: string) =>
       'X-Api-Key',
     ]),
   });
-};
+}
 
-//TODO: Setup API Gateway for Lambda Function
-export const setupApiGatewayForLambdaFn = (lambdaFunc: any) => {
+/**
+ * Setting API Gateway with Lambda function
+ */
+export function setupApiGatewayForLambdaFn(lambdaFunc: any) {
   return new cdk.aws_apigateway.LambdaIntegration(lambdaFunc);
-};
+}

@@ -15,10 +15,15 @@ export const envConfig = {
       grantSendMessages: process.env.GRANT_SEND_MESSAGES || 'grantSendMessages',
     },
     secretName: process.env.AWS_SCRET_NAME || 'HitoEnvSecret',
-    // S3 bucket configuration
+    // S3 Csv bucket configuration
     csvBucket: {
       idBucket: process.env.AWS_CSV_ID_BUCKET || 'LinhClassCsvBucket',
       bucketName: process.env.AWS_CSV_BUCKET_NAME || 'linhclass-csv-bucket',
+    },
+    // S3 Image bucket configuration
+    imageBucket:{
+      idBucket: process.env.AWS_IMAGE_ID_BUCKET || 'LinhClassImageBucket',
+      bucketName: process.env.AWS_IMAGE_BUCKET_NAME || 'linhclass-avatar-bucket',
     },
     // SQS configuration
     deadLetterQueue: {

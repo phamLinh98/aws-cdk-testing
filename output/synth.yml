@@ -20,8 +20,8 @@ Resources:
               - ETag
       VersioningConfiguration:
         Status: Enabled
-    UpdateReplacePolicy: Delete
-    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
     Metadata:
       aws:cdk:path: ServerlessApiStack/LinhClassCsvBucket/Resource
   LinhClassCsvBucketNotifications52A624DD:
@@ -68,6 +68,31 @@ Resources:
           - Arn
     Metadata:
       aws:cdk:path: ServerlessApiStack/LinhClassCsvBucket/AllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedIdLambdaACA2B3D6
+  LinhClassImageBucketF08CFB60:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: linhclass-avatar-bucket
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - Content-Type
+              - Authorization
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+              - DELETE
+              - HEAD
+            AllowedOrigins:
+              - "*"
+            ExposedHeaders:
+              - ETag
+      VersioningConfiguration:
+        Status: Enabled
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/LinhClassImageBucket/Resource
   LinhClassDeadLetterQueue7A0647EC:
     Type: AWS::SQS::Queue
     Properties:
@@ -123,8 +148,8 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
       TableName: upload-csv
-    UpdateReplacePolicy: Delete
-    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
     Metadata:
       aws:cdk:path: ServerlessApiStack/UploadCsvTable/Resource
   CreatePresignedUrlLambdaServiceRole1ADF6B6B:
@@ -254,6 +279,17 @@ Resources:
                 - ""
                 - - Fn::GetAtt:
                       - LinhClassCsvBucket8A50560C
+                      - Arn
+                  - /*
+          - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassImageBucketF08CFB60
                       - Arn
                   - /*
           - Action:
@@ -423,6 +459,17 @@ Resources:
                       - Arn
                   - /*
           - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassImageBucketF08CFB60
+                      - Arn
+                  - /*
+          - Action:
               - secretsmanager:GetSecretValue
               - secretsmanager:DescribeSecret
             Effect: Allow
@@ -589,6 +636,17 @@ Resources:
                       - Arn
                   - /*
           - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassImageBucketF08CFB60
+                      - Arn
+                  - /*
+          - Action:
               - secretsmanager:GetSecretValue
               - secretsmanager:DescribeSecret
             Effect: Allow
@@ -752,6 +810,17 @@ Resources:
                 - ""
                 - - Fn::GetAtt:
                       - LinhClassCsvBucket8A50560C
+                      - Arn
+                  - /*
+          - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassImageBucketF08CFB60
                       - Arn
                   - /*
           - Action:

@@ -1,0 +1,46 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Simple CFN template to create an S3 bucket",
+  "Parameters": {
+    "BucketName": {
+      "Type": "String",
+      "Description": "Unique name for the S3 bucket",
+      "Default": "my-unique-bucket-name-09-05-2025",
+      "MinLength": "3",
+      "MaxLength": "63",
+      "AllowedPattern": "^[a-z0-9\\-]+$",
+      "ConstraintDescription": "Bucket name must be lowercase, numbers and hyphens only."
+    },
+    "Tuan": {
+      "Type": "String",
+      "Description": "Tuan's name",
+      "Default": "Tuan"
+    }
+  },
+  "Resources": {
+    "MyS3Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": { "Ref": "BucketName" },
+        "AccessControl": "Private",
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "Tags": [
+          { "Key": "Environment", "Value": "Dev" },
+          { "Key": "Owner", "Value": "YourName" }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "BucketName": {
+      "Description": "The name of the S3 bucket",
+      "Value": { "Ref": "MyS3Bucket" }
+    },
+    "BucketArn": {
+      "Description": "ARN of the created bucket",
+      "Value": { "Fn::GetAtt": ["MyS3Bucket", "Arn"] }
+    }
+  }
+}
