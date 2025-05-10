@@ -7,4 +7,4 @@ aws cloudformation create-stack \
 
 // destroy above stack
 aws cloudformation delete-stack \
-  --stack-name tuan-test-s3-stack
+  --stack-name ServerlessApiStack

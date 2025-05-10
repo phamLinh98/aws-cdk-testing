@@ -291,7 +291,7 @@ export class ApiStack extends cdk.Stack {
     // setting secretManager for all lambda function using secret
     grantServiceAnServiceReadWriteAListService(secret, env.grantRole.grandRead, listLambdaFunction);
 
-    // when destroy not remove dynamoDb and S3 bucket
+    // when destroy remove dynamoDb and S3 bucket
     csvBucket.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
     imageBucket.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
     uploadCsvTable.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
