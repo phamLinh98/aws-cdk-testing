@@ -31,7 +31,11 @@ export class ApiStack extends cdk.Stack {
     );
 
     // Create S3 Bucket save csv file
-    const csvBucket = createNewBucketS3(this, env.csvBucket.idBucket, env.csvBucket.bucketName);
+    const csvBucket = createNewBucketS3(
+      this, 
+      env.csvBucket.idBucket, 
+      env.csvBucket.bucketName,
+    );
 
     // Create S3 Bucket save image
     const imageBucket = createNewBucketS3(
