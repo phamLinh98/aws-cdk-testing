@@ -1,98 +1,4 @@
 Resources:
-  LinhClassCsvBucket8A50560C:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: linhclass-csv-bucket
-      CorsConfiguration:
-        CorsRules:
-          - AllowedHeaders:
-              - Content-Type
-              - Authorization
-            AllowedMethods:
-              - GET
-              - PUT
-              - POST
-              - DELETE
-              - HEAD
-            AllowedOrigins:
-              - "*"
-            ExposedHeaders:
-              - ETag
-      VersioningConfiguration:
-        Status: Enabled
-    UpdateReplacePolicy: Retain
-    DeletionPolicy: Retain
-    Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassCsvBucket/Resource
-  LinhClassCsvBucketNotifications52A624DD:
-    Type: Custom::S3BucketNotifications
-    Properties:
-      ServiceToken:
-        Fn::GetAtt:
-          - BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691
-          - Arn
-      BucketName:
-        Ref: LinhClassCsvBucket8A50560C
-      NotificationConfiguration:
-        LambdaFunctionConfigurations:
-          - Events:
-              - s3:ObjectCreated:*
-            Filter:
-              Key:
-                FilterRules:
-                  - Name: suffix
-                    Value: .csv
-            LambdaFunctionArn:
-              Fn::GetAtt:
-                - GetBatchIdUpdateStatusToUploadedIdLambda5E5C04D7
-                - Arn
-      Managed: true
-      SkipDestinationValidation: false
-    DependsOn:
-      - LinhClassCsvBucketAllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedIdLambdaACA2B3D6D4F34176
-    Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassCsvBucket/Notifications/Resource
-  LinhClassCsvBucketAllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedIdLambdaACA2B3D6D4F34176:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName:
-        Fn::GetAtt:
-          - GetBatchIdUpdateStatusToUploadedIdLambda5E5C04D7
-          - Arn
-      Principal: s3.amazonaws.com
-      SourceAccount: "650251698778"
-      SourceArn:
-        Fn::GetAtt:
-          - LinhClassCsvBucket8A50560C
-          - Arn
-    Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassCsvBucket/AllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedIdLambdaACA2B3D6
-  LinhClassImageBucketF08CFB60:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: linhclass-avatar-bucket
-      CorsConfiguration:
-        CorsRules:
-          - AllowedHeaders:
-              - Content-Type
-              - Authorization
-            AllowedMethods:
-              - GET
-              - PUT
-              - POST
-              - DELETE
-              - HEAD
-            AllowedOrigins:
-              - "*"
-            ExposedHeaders:
-              - ETag
-      VersioningConfiguration:
-        Status: Enabled
-    UpdateReplacePolicy: Delete
-    DeletionPolicy: Delete
-    Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassImageBucket/Resource
   LinhClassDeadLetterQueue7A0647EC:
     Type: AWS::SQS::Queue
     Properties:
@@ -107,17 +13,30 @@ Resources:
     Properties:
       MessageRetentionPeriod: 1209600
       QueueName: linhclass-lambda-call-to-queue
-      RedrivePolicy:
-        deadLetterTargetArn:
-          Fn::GetAtt:
-            - LinhClassDeadLetterQueue7A0647EC
-            - Arn
-        maxReceiveCount: 5
       VisibilityTimeout: 30
     UpdateReplacePolicy: Delete
     DeletionPolicy: Delete
     Metadata:
       aws:cdk:path: ServerlessApiStack/LinhClassMainQueue/Resource
+  LinhClassSideDeadLetterQueue8CBE3CAE:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+      QueueName: linhclass-side-dead-letter-queue
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/LinhClassSideDeadLetterQueue/Resource
+  LinhClassSideQueue4A3EEF8C:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+      QueueName: linhclass-side-queue
+      VisibilityTimeout: 30
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/LinhClassSideQueue/Resource
   UsersTable9725E9C8:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -148,8 +67,8 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
       TableName: upload-csv
-    UpdateReplacePolicy: Retain
-    DeletionPolicy: Retain
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
     Metadata:
       aws:cdk:path: ServerlessApiStack/UploadCsvTable/Resource
   CreatePresignedUrlLambdaServiceRole1ADF6B6B:
@@ -228,15 +147,6 @@ Resources:
                 - LinhClassMainQueue02FE2B0D
                 - Arn
           - Action:
-              - sqs:SendMessage
-              - sqs:GetQueueAttributes
-              - sqs:GetQueueUrl
-            Effect: Allow
-            Resource:
-              Fn::GetAtt:
-                - LinhClassMainQueue02FE2B0D
-                - Arn
-          - Action:
               - dynamodb:PutItem
               - dynamodb:GetItem
               - dynamodb:UpdateItem
@@ -248,6 +158,37 @@ Resources:
               - Fn::GetAtt:
                   - UploadCsvTable52026CEB
                   - Arn
+          - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassCsvBucket8A50560C
+                      - Arn
+                  - /*
+          - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassImageBucketF08CFB60
+                      - Arn
+                  - /*
+          - Action:
+              - sqs:SendMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassMainQueue02FE2B0D
+                - Arn
           - Action:
               - s3:GetObject*
               - s3:GetBucket*
@@ -271,27 +212,27 @@ Resources:
                         - Arn
                     - /*
           - Action:
+              - s3:GetObject*
+              - s3:GetBucket*
+              - s3:List*
+              - s3:DeleteObject*
               - s3:PutObject
-              - s3:GetObject
+              - s3:PutObjectLegalHold
+              - s3:PutObjectRetention
+              - s3:PutObjectTagging
+              - s3:PutObjectVersionTagging
+              - s3:Abort*
             Effect: Allow
             Resource:
-              Fn::Join:
-                - ""
-                - - Fn::GetAtt:
-                      - LinhClassCsvBucket8A50560C
-                      - Arn
-                  - /*
-          - Action:
-              - s3:PutObject
-              - s3:GetObject
-            Effect: Allow
-            Resource:
-              Fn::Join:
-                - ""
-                - - Fn::GetAtt:
-                      - LinhClassImageBucketF08CFB60
-                      - Arn
-                  - /*
+              - Fn::GetAtt:
+                  - LinhClassImageBucketF08CFB60
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - LinhClassImageBucketF08CFB60
+                        - Arn
+                    - /*
           - Action:
               - secretsmanager:GetSecretValue
               - secretsmanager:DescribeSecret
@@ -405,15 +346,6 @@ Resources:
                 - LinhClassMainQueue02FE2B0D
                 - Arn
           - Action:
-              - sqs:SendMessage
-              - sqs:GetQueueAttributes
-              - sqs:GetQueueUrl
-            Effect: Allow
-            Resource:
-              Fn::GetAtt:
-                - LinhClassMainQueue02FE2B0D
-                - Arn
-          - Action:
               - dynamodb:PutItem
               - dynamodb:GetItem
               - dynamodb:UpdateItem
@@ -425,6 +357,37 @@ Resources:
               - Fn::GetAtt:
                   - UploadCsvTable52026CEB
                   - Arn
+          - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassCsvBucket8A50560C
+                      - Arn
+                  - /*
+          - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassImageBucketF08CFB60
+                      - Arn
+                  - /*
+          - Action:
+              - sqs:SendMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassMainQueue02FE2B0D
+                - Arn
           - Action:
               - s3:GetObject*
               - s3:GetBucket*
@@ -448,27 +411,27 @@ Resources:
                         - Arn
                     - /*
           - Action:
+              - s3:GetObject*
+              - s3:GetBucket*
+              - s3:List*
+              - s3:DeleteObject*
               - s3:PutObject
-              - s3:GetObject
+              - s3:PutObjectLegalHold
+              - s3:PutObjectRetention
+              - s3:PutObjectTagging
+              - s3:PutObjectVersionTagging
+              - s3:Abort*
             Effect: Allow
             Resource:
-              Fn::Join:
-                - ""
-                - - Fn::GetAtt:
-                      - LinhClassCsvBucket8A50560C
-                      - Arn
-                  - /*
-          - Action:
-              - s3:PutObject
-              - s3:GetObject
-            Effect: Allow
-            Resource:
-              Fn::Join:
-                - ""
-                - - Fn::GetAtt:
-                      - LinhClassImageBucketF08CFB60
-                      - Arn
-                  - /*
+              - Fn::GetAtt:
+                  - LinhClassImageBucketF08CFB60
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - LinhClassImageBucketF08CFB60
+                        - Arn
+                    - /*
           - Action:
               - secretsmanager:GetSecretValue
               - secretsmanager:DescribeSecret
@@ -582,15 +545,6 @@ Resources:
                 - LinhClassMainQueue02FE2B0D
                 - Arn
           - Action:
-              - sqs:SendMessage
-              - sqs:GetQueueAttributes
-              - sqs:GetQueueUrl
-            Effect: Allow
-            Resource:
-              Fn::GetAtt:
-                - LinhClassMainQueue02FE2B0D
-                - Arn
-          - Action:
               - dynamodb:PutItem
               - dynamodb:GetItem
               - dynamodb:UpdateItem
@@ -602,6 +556,37 @@ Resources:
               - Fn::GetAtt:
                   - UploadCsvTable52026CEB
                   - Arn
+          - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassCsvBucket8A50560C
+                      - Arn
+                  - /*
+          - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassImageBucketF08CFB60
+                      - Arn
+                  - /*
+          - Action:
+              - sqs:SendMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassMainQueue02FE2B0D
+                - Arn
           - Action:
               - s3:GetObject*
               - s3:GetBucket*
@@ -625,27 +610,27 @@ Resources:
                         - Arn
                     - /*
           - Action:
+              - s3:GetObject*
+              - s3:GetBucket*
+              - s3:List*
+              - s3:DeleteObject*
               - s3:PutObject
-              - s3:GetObject
+              - s3:PutObjectLegalHold
+              - s3:PutObjectRetention
+              - s3:PutObjectTagging
+              - s3:PutObjectVersionTagging
+              - s3:Abort*
             Effect: Allow
             Resource:
-              Fn::Join:
-                - ""
-                - - Fn::GetAtt:
-                      - LinhClassCsvBucket8A50560C
-                      - Arn
-                  - /*
-          - Action:
-              - s3:PutObject
-              - s3:GetObject
-            Effect: Allow
-            Resource:
-              Fn::Join:
-                - ""
-                - - Fn::GetAtt:
-                      - LinhClassImageBucketF08CFB60
-                      - Arn
-                  - /*
+              - Fn::GetAtt:
+                  - LinhClassImageBucketF08CFB60
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - LinhClassImageBucketF08CFB60
+                        - Arn
+                    - /*
           - Action:
               - secretsmanager:GetSecretValue
               - secretsmanager:DescribeSecret
@@ -707,6 +692,17 @@ Resources:
       PolicyDocument:
         Statement:
           - Action:
+              - sqs:ReceiveMessage
+              - sqs:ChangeMessageVisibility
+              - sqs:GetQueueUrl
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassMainQueue02FE2B0D
+                - Arn
+          - Action:
               - dynamodb:BatchGetItem
               - dynamodb:GetRecords
               - dynamodb:GetShardIterator
@@ -759,15 +755,6 @@ Resources:
                 - LinhClassMainQueue02FE2B0D
                 - Arn
           - Action:
-              - sqs:SendMessage
-              - sqs:GetQueueAttributes
-              - sqs:GetQueueUrl
-            Effect: Allow
-            Resource:
-              Fn::GetAtt:
-                - LinhClassMainQueue02FE2B0D
-                - Arn
-          - Action:
               - dynamodb:PutItem
               - dynamodb:GetItem
               - dynamodb:UpdateItem
@@ -779,28 +766,6 @@ Resources:
               - Fn::GetAtt:
                   - UploadCsvTable52026CEB
                   - Arn
-          - Action:
-              - s3:GetObject*
-              - s3:GetBucket*
-              - s3:List*
-              - s3:DeleteObject*
-              - s3:PutObject
-              - s3:PutObjectLegalHold
-              - s3:PutObjectRetention
-              - s3:PutObjectTagging
-              - s3:PutObjectVersionTagging
-              - s3:Abort*
-            Effect: Allow
-            Resource:
-              - Fn::GetAtt:
-                  - LinhClassCsvBucket8A50560C
-                  - Arn
-              - Fn::Join:
-                  - ""
-                  - - Fn::GetAtt:
-                        - LinhClassCsvBucket8A50560C
-                        - Arn
-                    - /*
           - Action:
               - s3:PutObject
               - s3:GetObject
@@ -824,16 +789,58 @@ Resources:
                       - Arn
                   - /*
           - Action:
-              - sqs:ReceiveMessage
-              - sqs:ChangeMessageVisibility
-              - sqs:GetQueueUrl
-              - sqs:DeleteMessage
+              - sqs:SendMessage
               - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
             Effect: Allow
             Resource:
               Fn::GetAtt:
                 - LinhClassMainQueue02FE2B0D
                 - Arn
+          - Action:
+              - s3:GetObject*
+              - s3:GetBucket*
+              - s3:List*
+              - s3:DeleteObject*
+              - s3:PutObject
+              - s3:PutObjectLegalHold
+              - s3:PutObjectRetention
+              - s3:PutObjectTagging
+              - s3:PutObjectVersionTagging
+              - s3:Abort*
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - LinhClassCsvBucket8A50560C
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - LinhClassCsvBucket8A50560C
+                        - Arn
+                    - /*
+          - Action:
+              - s3:GetObject*
+              - s3:GetBucket*
+              - s3:List*
+              - s3:DeleteObject*
+              - s3:PutObject
+              - s3:PutObjectLegalHold
+              - s3:PutObjectRetention
+              - s3:PutObjectTagging
+              - s3:PutObjectVersionTagging
+              - s3:Abort*
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - LinhClassImageBucketF08CFB60
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - LinhClassImageBucketF08CFB60
+                        - Arn
+                    - /*
           - Action:
               - secretsmanager:GetSecretValue
               - secretsmanager:DescribeSecret
@@ -885,6 +892,100 @@ Resources:
         MaximumConcurrency: 5
     Metadata:
       aws:cdk:path: ServerlessApiStack/GetCsvReadDetailUpdateInProcessingLambda/SqsEventSource:ServerlessApiStackLinhClassMainQueue1E12F19C/Resource
+  LinhClassCsvBucket8A50560C:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: linhclass-csv-bucket
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - Content-Type
+              - Authorization
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+              - DELETE
+              - HEAD
+            AllowedOrigins:
+              - "*"
+            ExposedHeaders:
+              - ETag
+      VersioningConfiguration:
+        Status: Enabled
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/LinhClassCsvBucket/Resource
+  LinhClassCsvBucketNotifications52A624DD:
+    Type: Custom::S3BucketNotifications
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691
+          - Arn
+      BucketName:
+        Ref: LinhClassCsvBucket8A50560C
+      NotificationConfiguration:
+        LambdaFunctionConfigurations:
+          - Events:
+              - s3:ObjectCreated:*
+            Filter:
+              Key:
+                FilterRules:
+                  - Name: suffix
+                    Value: .csv
+            LambdaFunctionArn:
+              Fn::GetAtt:
+                - GetBatchIdUpdateStatusToUploadedIdLambda5E5C04D7
+                - Arn
+      Managed: true
+      SkipDestinationValidation: false
+    DependsOn:
+      - LinhClassCsvBucketAllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedIdLambdaACA2B3D6D4F34176
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/LinhClassCsvBucket/Notifications/Resource
+  LinhClassCsvBucketAllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedIdLambdaACA2B3D6D4F34176:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - GetBatchIdUpdateStatusToUploadedIdLambda5E5C04D7
+          - Arn
+      Principal: s3.amazonaws.com
+      SourceAccount: "650251698778"
+      SourceArn:
+        Fn::GetAtt:
+          - LinhClassCsvBucket8A50560C
+          - Arn
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/LinhClassCsvBucket/AllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedIdLambdaACA2B3D6
+  LinhClassImageBucketF08CFB60:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: linhclass-avatar-bucket
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - Content-Type
+              - Authorization
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+              - DELETE
+              - HEAD
+            AllowedOrigins:
+              - "*"
+            ExposedHeaders:
+              - ETag
+      VersioningConfiguration:
+        Status: Enabled
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/LinhClassImageBucket/Resource
   BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC:
     Type: AWS::IAM::Role
     Properties:
@@ -1365,7 +1466,7 @@ Resources:
   CDKMetadata:
     Type: AWS::CDK::Metadata
     Properties:
-      Analytics: v2:deflate64:H4sIAAAAAAAA/2WQT2/CMAzFPwt34/Fnlx2BbTc0VnZHbmpKoE06nICqKN99SsoY0k7vZ7/Ett4Mpy8TnIzoKmNVncaNLjFsHakTFCzWnxUDXWUXZI5h6dWJHaz25kaDLEk4QkNtWRGG1d5s+NxqEW0NvHujXILV3tz57cLGbfPwNXWdNnWy/3cjyLdg+PTsOb3IEKHqDbW2KjF8UdlkJ0METS2Gwg69rBvbaNWncqAIMt+RCDvBRRKgTtfk+Eo9hoLFLTqdf//hQinrjYNX7hrbt2xyBA/V1lGdVw7wG1zKBdbsDrZK5o3usQ5LMsf4WEE+LM26JfPhXeddBGMrxqM8XWYznD7jZHQUrcdnb5xuGYtBfwAEOPYh0gEAAA==
+      Analytics: v2:deflate64:H4sIAAAAAAAA/22Qy3LCMAxFv4W9UHl00yX0sWNKQ/eM4qhgSOwUyTAZj/+9E4dSFl3dY129rBlOnyY4GdFFxqY6jmtbYtwomSMULD6cDANdZBvlWzB+BA4Mz18uQ4Kqc9T4qsT4SWWdnQwJamrKijC+BWfUetdbN349s9NNbr6itrVu19v/R9d8aqyI9S6BpQZj4YdBWde+tqbLeZkSyHxLIqyCi15A5hiXwRxZlyQMA/YFAyWg1u5I+UIdxoJFF63N7f9wYYwPTuGF29p3Dbtcf/faKO3yTgP8Hi4PXLHufdWbV7qddRiSOSXI2/b113/fp70HbYMmcL5iPMjDeTbD6SNORgexdnwKTm3DWAz6AyqnnznSAQAA
     Metadata:
       aws:cdk:path: ServerlessApiStack/CDKMetadata/Default
 Outputs:

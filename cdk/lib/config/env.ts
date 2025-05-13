@@ -21,24 +21,61 @@ export const envConfig = {
       bucketName: process.env.AWS_CSV_BUCKET_NAME || 'linhclass-csv-bucket',
     },
     // S3 Image bucket configuration
-    imageBucket:{
+    imageBucket: {
       idBucket: process.env.AWS_IMAGE_ID_BUCKET || 'LinhClassImageBucket',
       bucketName: process.env.AWS_IMAGE_BUCKET_NAME || 'linhclass-avatar-bucket',
     },
     // SQS configuration
-    deadLetterQueue: {
-      idQueue: process.env.AWS_DEAD_LTTER_ID_QUEUE || 'LinhClassDeadLetterQueue',
-      queueName: process.env.AWS_DEAD_LTTER_QUEUE_NAME || 'linhclass-dead-letter-queue',
-      maxTime: process.env.AWS_DEAD_LETTER_QUEUE_MAX_TIME || 14,
-    },
-    mainQueue: {
-      idQueue: process.env.AWS_MAIN_ID_QUEUE || 'LinhClassMainQueue',
-      queueName: process.env.AWS_MAIN_QUEUE_NAME || 'linhclass-lambda-call-to-queue',
-      maxTime: process.env.AWS_MAIN_QUEUE_MAX_TIME || 14,
-      visibilityTimeout: process.env.AWS_MAIN_QUEUE_VISIBILITY_TIMEOUT || 30,
-      maxReceiveCount: process.env.AWS_MAIN_MAX_RETRIES || 5,
-      batchSize: process.env.AWS_BATCH_SIZE || 10,
-      maxCurrency: process.env.AWS_MAX_CURRENTCY || 5,
+    queue: {
+      deadLetter: {
+        idQueue: process.env.AWS_DEAD_LTTER_ID_QUEUE || 'LinhClassDeadLetterQueue',
+        queueName: process.env.AWS_DEAD_LTTER_QUEUE_NAME || 'linhclass-dead-letter-queue',
+        maxTime: process.env.AWS_DEAD_LETTER_QUEUE_MAX_TIME || 14,
+        isDedleterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 1,
+      },
+      main: {
+        idQueue: process.env.AWS_MAIN_ID_QUEUE || 'LinhClassMainQueue',
+        queueName: process.env.AWS_MAIN_QUEUE_NAME || 'linhclass-lambda-call-to-queue',
+        maxTime: process.env.AWS_MAIN_QUEUE_MAX_TIME || 14,
+        visibilityTimeout: process.env.AWS_MAIN_QUEUE_VISIBILITY_TIMEOUT || 30,
+        maxReceiveCount: process.env.AWS_MAIN_MAX_RETRIES || 5,
+        batchSize: process.env.AWS_BATCH_SIZE || 10,
+        maxCurrency: process.env.AWS_MAX_CURRENTCY || 5,
+        isDedleterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 0,
+        deadLetterQueueName: 'deadLetter',
+        policyActionList: 'sqsNormalPolicy',
+      },
+      sideDeadLetter: {
+        idQueue: process.env.AWS_SIDE_DEAD_LTTER_ID_QUEUE || 'LinhClassSideDeadLetterQueue',
+        queueName: process.env.AWS_SIDE_DEAD_LTTER_QUEUE_NAME || 'linhclass-side-dead-letter-queue',
+        maxTime: process.env.AWS_SIDE_DEAD_LETTER_QUEUE_MAX_TIME || 14,
+        isDedleterQueue: process.env.AWS_SIDE_DEAD_LETTER_IS_DELETE || 1,
+      },
+      side: {
+        idQueue: process.env.AWS_SIDE_ID_QUEUE || 'LinhClassSideQueue',
+        queueName: process.env.AWS_SIDE_QUEUE_NAME || 'linhclass-side-queue',
+        maxTime: process.env.AWS_SIDE_QUEUE_MAX_TIME || 14,
+        visibilityTimeout: process.env.AWS_SIDE_QUEUE_VISIBILITY_TIMEOUT || 30,
+        maxReceiveCount: process.env.AWS_SIDE_MAX_RETRIES || 5,
+        batchSize: process.env.AWS_SIDE_BATCH_SIZE || 10,
+        maxCurrency: process.env.AWS_SIDE_MAX_CURRENTCY || 5,
+        isDedleterQueue: process.env.AWS_SIDE_DEAD_LETTER_IS_DELETE || 0,
+        policyActionList: 'sqsSidePolicy',
+      },
+      take2: {
+        idQueue: process.env.AWS_TAKE_2_ID_QUEUE || 'LinhClassTake2Queue',
+        queueName: process.env.AWS_TAKE_2_QUEUE_NAME || 'linhclass-take-2-queue',
+        maxTime: process.env.AWS_TAKE_2_QUEUE_MAX_TIME || 14,
+        visibilityTimeout: process.env.AWS_TAKE_2_QUEUE_VISIBILITY_TIMEOUT || 30,
+        maxReceiveCount: process.env.AWS_TAKE_2_MAX_RETRIES || 5,
+        batchSize: process.env.AWS_TAKE_2_BATCH_SIZE || 10,
+        maxCurrency: process.env.AWS_TAKE_2_MAX_CURRENTCY || 5,
+        isDedleterQueue: process.env.AWS_TAKE_2_DEAD_LETTER_IS_DELETE || 0,
+      },
+      fuku: {
+        idQueue: process.env.AWS_FUKU_ID_QUEUE || 'linhclass-fuku-queue',
+        queueName: process.env.AWS_FUKU_QUEUE_NAME || 'linhclass-fuku-queue',
+      },
     },
     // DynamoDB table names
     usersTable: {
@@ -79,10 +116,21 @@ export const envConfig = {
     apiGateway: {
       idLambda: process.env.AWS_API_GATEWAY_ID || 'LinhClassApiGateway',
     },
-    listRoleInIAM:{
-       sqsRoleList: process.env.LIST_SQS_ROLE_IN_IAM || '["sqs:SendMessage","sqs:ReceiveMessage","sqs:DeleteMessage","sqs:GetQueueAttributes","sqs:ListQueues"]',
-       dynamoRoleList: process.env.LIST_DYNAMO_ROLE_IN_IAM || '["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"]',
-       s3RoleList: process.env.LIST_S3_ROLE_IN_IAM || '["s3:PutObject", "s3:GetObject"]'
-      },
-  }
+    policyActionList: {
+      sqsNormalPolicy:
+        process.env.LIST_SQS_NORMAL_ROLE_IN_IAM ||
+        'sqs:SendMessage,sqs:ReceiveMessage,sqs:DeleteMessage,sqs:GetQueueAttributes,sqs:ListQueues',
+      sqsSidePolicy: process.env.LIST_SQS_SIDE_ROLE_IN_IAM || 'sqs:SendMessage,sqs:ListQueues',
+      dynamoRoleList:
+        process.env.LIST_DYNAMO_ROLE_IN_IAM ||
+        '["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"]',
+      s3RoleList: process.env.LIST_S3_ROLE_IN_IAM || '["s3:PutObject", "s3:GetObject"]',
+    },
+    policyStatement: {
+      actionList:
+        process.env.LIST_POLICY_STATEMENT_ACTION_LIST ||
+        'sqs:SendMessage,sqs:ReceiveMessage,sqs:DeleteMessage,sqs:GetQueueAttributes,sqs:ListQueues',
+      resourceList: 'queue/deadLetter',
+    },
+  },
 };

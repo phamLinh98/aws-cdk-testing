@@ -24,7 +24,7 @@ export function createNewSQS(
   queueName: string,
   maxTime: number,
   visibilityTimeout: number = 30,
-  deadLetterQueue: cdk.aws_sqs.IQueue,
+  deadLetterQueue: cdk.aws_sqs.IQueue | undefined = undefined,
   maxReceiveCount: number = 5,
   ...props: any
 ) {
@@ -32,10 +32,13 @@ export function createNewSQS(
     queueName: queueName, // the name of the queue
     retentionPeriod: cdk.Duration.days(maxTime), // the time that a message is retained in the queue
     visibilityTimeout: cdk.Duration.seconds(visibilityTimeout), // the time that a message is invisible to other consumers after being received
-    deadLetterQueue: {
-      queue: deadLetterQueue, // Reference the dead-letter queue object
-      maxReceiveCount: maxReceiveCount, // the maximum number of times a message can be received before being sent to the dead-letter queue
-    },
+    // TODO: Check this
+    deadLetterQueue: deadLetterQueue
+      ? {
+          queue: deadLetterQueue, // Reference the dead-letter queue object
+          maxReceiveCount: maxReceiveCount, // the maximum number of times a message can be received before being sent to the dead-letter queue
+        }
+      : undefined, // the dead letter queue
     ...props,
   });
 }
@@ -58,7 +61,7 @@ export function createNewDeadLetterQueue(
 /**
  * Create a new SQS event source
  */
-export function settingSqsBatchSizeCurrentcy(
+export function settingSqsEventSource(
   queueName: any,
   batchSize: number,
   maxConcurrency: number,
