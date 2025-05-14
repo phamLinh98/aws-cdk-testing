@@ -5,38 +5,48 @@ import {
   settingS3Notification,
 } from '../custom-constracts/csv-upload-resources';
 import * as cdk from 'aws-cdk-lib';
+import { envConfig } from '../config/env';
 
-export const s3BucketSetup = (scope: Construct, env: any, lambdaTrigger: any) => {
-  let s3Policy: cdk.aws_iam.PolicyStatement | undefined;
-  let s3Bucket: cdk.aws_s3.Bucket | undefined;
-  let s3Setup = [] as any[];
+export type S3SetupItemType = {
+  bucket: cdk.aws_s3.Bucket;
+  policy: cdk.aws_iam.PolicyStatement;
+};
 
-  const listBucket = Object.values(env.s3).map((bucket:any) => ({
-    idBucket: bucket.idBucket,
-    bucketName: bucket.bucketName,
-    bucketArn: bucket.bucketArn,
-    triggerLambda: bucket.triggerLambda,
-  }));
-  
-  listBucket.forEach((bucketInfo) => {
-    const s3 = createNewBucketS3(scope, bucketInfo.idBucket, bucketInfo.bucketName);
-    const policy = settingNewPolicy(JSON.parse(env.policyActionList.s3RoleList), [
-      s3.arnForObjects('*'),
+export type S3SetupType = {
+  [key: string]: S3SetupItemType;
+};
+
+type EnvS3Type = {
+  [key: string]: {
+    idBucket: string;
+    bucketName: string;
+    triggerLambda: string;
+  };
+};
+
+export const s3Setup = (scope: Construct, lambdaTrigger: any) => {
+  const envS3 = envConfig.aws.s3 as EnvS3Type;
+  const result = {} as S3SetupType;
+
+  // Create S3 buckets and policies based on environment variables
+  Object.keys(envS3).forEach((key) => {
+    const bucketInfo = envS3[key];
+    const s3Bucket = createNewBucketS3(scope, bucketInfo.idBucket, bucketInfo.bucketName);
+    const s3Policy = settingNewPolicy(JSON.parse(envConfig.aws.policyActionList.s3RoleList), [
+      s3Bucket.arnForObjects('*'),
     ]);
+    s3Bucket.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
 
-    s3Policy = policy;
-    s3Bucket = s3;
-    s3.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
-
-    s3Setup.push({
-      bucket: s3,
-      policy: policy,
-    });
+    result[key] = {
+      bucket: s3Bucket,
+      policy: s3Policy,
+    };
 
     if (bucketInfo.triggerLambda) {
-      const bucketS3Notification = settingS3Notification(s3, '.csv');
+      const bucketS3Notification = settingS3Notification(s3Bucket, '.csv');
       lambdaTrigger.addEventSource(bucketS3Notification);
     }
   });
-  return s3Setup;
+
+  return result;
 };

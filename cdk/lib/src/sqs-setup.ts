@@ -9,78 +9,68 @@ import {
   settingNewPolicy,
   settingSqsEventSource,
 } from '../custom-constracts/csv-upload-resources';
+import * as cdk from 'aws-cdk-lib';
 
-type SQSSetup = {
-  queue: {
-    [key: string]: Queue;
-  };
-  policy: {
-    [key: string]: PolicyStatement;
-  };
-  sqsEventSource: {
-    [key: string]: SqsEventSource;
+type EnvSqsSetupType = {
+  [key: string]: {
+    idQueue: string;
+    queueName: string;
+    maxTime?: string;
+    visibilityTimeout?: string;
+    maxReceiveCount?: string;
+    batchSize?: string;
+    maxCurrency?: string;
+    isDeadLeterQueue?: any;
+    deadLetterQueueName?: string;
+    policyActionList?: string;
   };
 };
 
-type SQSInfo = {
-  idQueue: string;
-  queueName: string;
-  maxTime?: string;
-  visibilityTimeout?: string;
-  maxReceiveCount?: string;
-  batchSize?: string;
-  maxCurrency?: string;
-  isDedleterQueue?: string;
-  deadLetterQueueName?: string;
-  policyActionList?: string;
+export type SqsSetupItemType = {
+  queue: cdk.aws_sqs.Queue;
+  policy: cdk.aws_iam.PolicyStatement;
+  sqsEventSource: cdk.aws_lambda_event_sources.SqsEventSource;
 };
 
-export const sqsSetup = (scope: Construct) => {
-  const queue = envConfig.aws.queue as {
-    [key: string]: SQSInfo;
-  };
-  const listQueue = Object.keys(queue);
-  const result: SQSSetup = {
-    queue: {},
-    policy: {},
-    sqsEventSource: {},
-  };
+export type SqsSetupType = {
+  [key: string]: SqsSetupItemType;
+};
 
-  // Setup SQS
-  for (const key of listQueue) {
-    const queueInfo = queue[key];
-    const isDedleterQueue = +(queueInfo.isDedleterQueue ?? 0);
+export const sqsSetup = (scope: Construct, env: any) => {
+  const envQueue = env.queue as EnvSqsSetupType;
+  const result = {} as SqsSetupType;
 
-    // Create SQS
-    switch (isDedleterQueue) {
+  for (const key of Object.keys(envQueue)) {
+    const queueInfo = envQueue[key];
+    const sqsSetupItem = {} as SqsSetupItemType;
+
+    // Setup queu
+    switch (+envQueue[key].isDeadLeterQueue) {
       // Normal Queue
-      case 0:
-        {
-          const deadLetterQueue = result.queue[queueInfo.deadLetterQueueName!] ?? undefined;
-          const normalQueue = createNewSQS(
-            scope,
-            queueInfo.idQueue,
-            queueInfo.queueName,
-            +(queueInfo.maxTime ?? 14),
-            +(queueInfo.visibilityTimeout ?? 30),
-            deadLetterQueue,
-            +(queueInfo.maxReceiveCount ?? 5),
-          );
-          result.queue[queueInfo.idQueue] = normalQueue;
-        }
+      case 0: {
+        const deadLetterQueue = result[queueInfo.deadLetterQueueName!].queue ?? undefined;
+        // const deadLetterQueue = result['deadLetter'].queue ?? undefined;
+        sqsSetupItem.queue = createNewSQS(
+          scope,
+          queueInfo.idQueue,
+          queueInfo.queueName,
+          +(queueInfo.maxTime ?? 14),
+          +(queueInfo.visibilityTimeout ?? 30),
+          deadLetterQueue,
+          +(queueInfo.maxReceiveCount ?? 5),
+        );
         break;
+      }
       // Dead Letter Queue
-      case 1:
-        {
-          const deadLetterQueue = createNewDeadLetterQueue(
-            scope,
-            queueInfo.idQueue,
-            queueInfo.queueName,
-            +(queueInfo.maxTime ?? 14),
-          );
-          result.queue[queueInfo.idQueue] = deadLetterQueue;
-        }
+      case 1: {
+        sqsSetupItem.queue = createNewDeadLetterQueue(
+          scope,
+          queueInfo.idQueue,
+          queueInfo.queueName,
+          +(queueInfo.maxTime ?? 14),
+        );
         break;
+      }
       // Other Queue Type: 3,4,5...
     }
 
@@ -93,20 +83,20 @@ export const sqsSetup = (scope: Construct) => {
       .filter((action) => action.includes(':')); // Ensure valid action strings
     const isSetPolicy = policyActionList.length > 0;
     if (isSetPolicy) {
-      const policy = settingNewPolicy(policyActionList, [result.queue[queueInfo.idQueue].queueArn]);
-      result.policy[queueInfo.idQueue] = policy;
+      sqsSetupItem.policy = settingNewPolicy(policyActionList, [sqsSetupItem.queue.queueArn]);
     }
 
-    // Setup SQS Event Source
+    // Setup Event Source
     // Check if batchSize and maxCurrency are defined then setup SQS Event Source
     if (queueInfo.batchSize && queueInfo.maxCurrency) {
-      const sqsEventSource = settingSqsEventSource(
-        result.queue[queueInfo.idQueue],
+      sqsSetupItem.sqsEventSource = settingSqsEventSource(
+        sqsSetupItem.queue,
         +queueInfo.batchSize,
         +queueInfo.maxCurrency,
       );
-      result.sqsEventSource[queueInfo.idQueue] = sqsEventSource;
     }
+
+    result[key] = sqsSetupItem;
   }
 
   return result;

@@ -1,45 +1,19 @@
-const s3 = {
-  csvBucket: {
-    idBucket: process.env.AWS_CSV_ID_BUCKET || "LinhClassCsvBucket",
-    bucketName: process.env.AWS_CSV_BUCKET_NAME || "linhclass-csv-bucket",
-    bucketArn:
-      process.env.AWS_CSV_BUCKET_ARN || "arn:aws:s3:::linhclass-csv-bucket",
-    triggerLambda: process.env.AWS_CSV_TRIGGER_LAMBDA || true,
-  },
-  // S3 Image bucket configuration
-  imageBucket1: {
-    idBucket: process.env.AWS_IMAGE_ID_BUCKET || "LinhClassImageBucket",
-    bucketName: process.env.AWS_IMAGE_BUCKET_NAME || "linhclass-avatar-bucket",
-    bucketArn:
-      process.env.AWS_IMAGE_BUCKET_ARN ||
-      "arn:aws:s3:::linhclass-avatar-bucket",
-    triggerLambda: process.env.AWS_IMAGE_TRIGGER_LAMBDA || false,
-  },
+const listSetUp = [{ A: 123 }, { B: 234 }];
 
-  imageBucket2: {
-    idBucket: process.env.AWS_IMAGE_ID_BUCKET || "LinhClassImageBucket",
-    bucketName: process.env.AWS_IMAGE_BUCKET_NAME || "linhclass-avatar-bucket",
-    bucketArn:
-      process.env.AWS_IMAGE_BUCKET_ARN ||
-      "arn:aws:s3:::linhclass-avatar-bucket",
-    triggerLambda: process.env.AWS_IMAGE_TRIGGER_LAMBDA || false,
+const infoForSettingAPIGateway = [
+  {
+    api: 'get-url',
+    method: 'GET',
   },
-
-  imageBucket3: {
-    idBucket: process.env.AWS_IMAGE_ID_BUCKET || "LinhClassImageBucket",
-    bucketName: process.env.AWS_IMAGE_BUCKET_NAME || "linhclass-avatar-bucket",
-    bucketArn:
-      process.env.AWS_IMAGE_BUCKET_ARN ||
-      "arn:aws:s3:::linhclass-avatar-bucket",
-    triggerLambda: process.env.AWS_IMAGE_TRIGGER_LAMBDA || false,
+  {
+    api: 'get-status',
+    method: 'GET',
   },
-};
+];
 
-const listBucket = Object.values(s3).map((bucket) => ({
-  idBucket: bucket.idBucket,
-  bucketName: bucket.bucketName,
-  bucketArn: bucket.bucketArn,
-  triggerLambda: bucket.triggerLambda,
+const updatedInfo = infoForSettingAPIGateway.map((info, index) => ({
+  ...info,
+  lambdaFunc: listSetUp[index],
 }));
 
-console.log("listBucket:", listBucket);
+console.log(updatedInfo);

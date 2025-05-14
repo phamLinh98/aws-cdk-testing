@@ -16,17 +16,15 @@ export const envConfig = {
     secretName: process.env.AWS_SCRET_NAME || 'HitoEnvSecret',
     s3: {
       csvBucket: {
-        idBucket: process.env.AWS_CSV_ID_BUCKET || 'LinhClassCsvBucket',
+        idBucket: process.env.AWS_CSV_ID_BUCKET || 'LinhClassCsvBucket1',
         bucketName: process.env.AWS_CSV_BUCKET_NAME || 'linhclass-csv-bucket',
-        bucketArn: process.env.AWS_CSV_BUCKET_ARN || 'arn:aws:s3:::linhclass-csv-bucket',
-        triggerLambda: process.env.AWS_CSV_TRIGGER_LAMBDA || true,
+        triggerLambda: process.env.AWS_CSV_TRIGGER_LAMBDA || 1,
       },
       // S3 Image bucket configuration
       imageBucket: {
-        idBucket: process.env.AWS_IMAGE_ID_BUCKET || 'LinhClassImageBucket',
+        idBucket: process.env.AWS_MAGE_ID_BUCKET || 'LinhClassImageBucket1',
         bucketName: process.env.AWS_IMAGE_BUCKET_NAME || 'linhclass-avatar-bucket',
-        bucketArn: process.env.AWS_IMAGE_BUCKET_ARN || 'arn:aws:s3:::linhclass-avatar-bucket',
-        triggerLambda: process.env.AWS_IMAGE_TRIGGER_LAMBDA || false,
+        triggerLambda: process.env.AWS_IMAGE_TRIGGER_LAMBDA || 0,
       },
     },
     // SQS configuration
@@ -35,7 +33,7 @@ export const envConfig = {
         idQueue: process.env.AWS_DEAD_LTTER_ID_QUEUE || 'LinhClassDeadLetterQueue',
         queueName: process.env.AWS_DEAD_LTTER_QUEUE_NAME || 'linhclass-dead-letter-queue',
         maxTime: process.env.AWS_DEAD_LETTER_QUEUE_MAX_TIME || 14,
-        isDedleterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 1,
+        isDeadLeterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 1,
       },
       main: {
         idQueue: process.env.AWS_MAIN_ID_QUEUE || 'LinhClassMainQueue',
@@ -45,7 +43,7 @@ export const envConfig = {
         maxReceiveCount: process.env.AWS_MAIN_MAX_RETRIES || 5,
         batchSize: process.env.AWS_BATCH_SIZE || 10,
         maxCurrency: process.env.AWS_MAX_CURRENTCY || 5,
-        isDedleterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 0,
+        isDeadLeterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 0,
         deadLetterQueueName: 'deadLetter',
         policyActionList: 'sqsNormalPolicy',
       },
@@ -53,7 +51,7 @@ export const envConfig = {
         idQueue: process.env.AWS_SIDE_DEAD_LTTER_ID_QUEUE || 'LinhClassSideDeadLetterQueue',
         queueName: process.env.AWS_SIDE_DEAD_LTTER_QUEUE_NAME || 'linhclass-side-dead-letter-queue',
         maxTime: process.env.AWS_SIDE_DEAD_LETTER_QUEUE_MAX_TIME || 14,
-        isDedleterQueue: process.env.AWS_SIDE_DEAD_LETTER_IS_DELETE || 1,
+        isDeadLeterQueue: process.env.AWS_SIDE_DEAD_LETTER_IS_DELETE || 1,
       },
       side: {
         idQueue: process.env.AWS_SIDE_ID_QUEUE || 'LinhClassSideQueue',
@@ -63,7 +61,7 @@ export const envConfig = {
         maxReceiveCount: process.env.AWS_SIDE_MAX_RETRIES || 5,
         batchSize: process.env.AWS_SIDE_BATCH_SIZE || 10,
         maxCurrency: process.env.AWS_SIDE_MAX_CURRENTCY || 5,
-        isDedleterQueue: process.env.AWS_SIDE_DEAD_LETTER_IS_DELETE || 0,
+        isDeadLeterQueue: process.env.AWS_SIDE_DEAD_LETTER_IS_DELETE || 0,
         policyActionList: 'sqsSidePolicy',
       },
       take2: {
@@ -74,7 +72,7 @@ export const envConfig = {
         maxReceiveCount: process.env.AWS_TAKE_2_MAX_RETRIES || 5,
         batchSize: process.env.AWS_TAKE_2_BATCH_SIZE || 10,
         maxCurrency: process.env.AWS_TAKE_2_MAX_CURRENTCY || 5,
-        isDedleterQueue: process.env.AWS_TAKE_2_DEAD_LETTER_IS_DELETE || 0,
+        isDeadLeterQueue: process.env.AWS_TAKE_2_DEAD_LETTER_IS_DELETE || 0,
       },
       fuku: {
         idQueue: process.env.AWS_FUKU_ID_QUEUE || 'linhclass-fuku-queue',
@@ -82,47 +80,86 @@ export const envConfig = {
       },
     },
     // DynamoDB table names
-    table:{
+    table: {
       usersTable: {
         idTable: process.env.AWS_USERS_ID_TABLE || 'UsersTable',
         tableName: process.env.AWS_USERS_TABLE_NAME || 'users',
-        tableArn: process.env.AWS_USERS_TABLE_ARN || 'arn:aws:dynamodb:ap-northeast-1:650251698778:table/users',
       },
       uploadCsvTable: {
         idTable: process.env.AWS_UPLOAD_CSV_ID_TABLE || 'UploadCsvTable',
         tableName: process.env.AWS_UPLOAD_CSV_TABLE_NAME || 'upload-csv',
-        tableArn: process.env.AWS_UPLOAD_CSV_TABLE_ARN || 'arn:aws:dynamodb:ap-northeast-1:650251698778:table/upload-csv',
       },
     },
     // Lambda function configuration
-    createPresignedUrlLambda: {
-      idLambda: process.env.AWS_CREATE_PRESIGNED_URL_ID_LAMBDA || 'CreatePresignedUrlLambda',
-      lambdaName:
-        process.env.AWS_CREATE_PRESIGNED_URL_LAMBDA_NAME || 'create-presigned-url-uploading-lambda',
-    },
-    getStatusFromDynamoDBLambda: {
-      idLambda: process.env.AWS_GET_STATUS_FROM_DYNAMODB_ID_LAMBDA || 'GetStatusFromDynamoDBLambda',
-      lambdaName:
-        process.env.AWS_GET_STATUS_FROM_DYNAMODB_LAMBDA_NAME || 'get-status-from-dynamodb-lambda',
-    },
-    getBatchIdUpdateStatusToUploadedIdLambda: {
-      idLambda:
-        process.env.AWS_GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED_ID_LAMBDA ||
-        'GetBatchIdUpdateStatusToUploadedIdLambda',
-      lambdaName:
-        process.env.AWS_GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED_ID_LAMBDA_NAME ||
-        'get-batch-id-update-status-to-uploaded',
-    },
-    getCsvReadDetailUpdateInProcessingLambda: {
-      idLambda:
-        process.env.AWS_GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA ||
-        'GetCsvReadDetailUpdateInProcessingLambda',
-      lambdaName:
-        process.env.AWS_GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA_NAME ||
-        'get-csv-read-detail-update-inprocessing-lambda',
+    lambda: {
+      createPresignedUrlLambda: {
+        idLambda: process.env.AWS_CREATE_PRESIGNED_URL_ID_LAMBDA || 'CreatePresignedUrlLambda',
+        lambdaName:
+          process.env.AWS_CREATE_PRESIGNED_URL_LAMBDA_NAME ||
+          'create-presigned-url-uploading-lambda',
+        triggerSQS: false,
+        triggerS3: true,
+        createAPI: true,
+        path: './src/rebuild' + '/create-preurl',
+        excludeFunction: 'create-preurl-s3-update-status-uploading-lambda.mjs',
+        lambdaHander: 'create-preurl-s3-update-status-uploading-lambda.handler',
+      },
+      getStatusFromDynamoDBLambda: {
+        idLambda:
+          process.env.AWS_GET_STATUS_FROM_DYNAMODB_ID_LAMBDA || 'GetStatusFromDynamoDBLambda',
+        lambdaName:
+          process.env.AWS_GET_STATUS_FROM_DYNAMODB_LAMBDA_NAME || 'get-status-from-dynamodb-lambda',
+        triggerSQS: false,
+        triggerS3: false,
+        createAPI: true,
+        path: './src/rebuild' + '/get-status',
+        excludeFunction: 'get-status-from-dynamodb-lambda.mjs',
+        lambdaHander: 'get-status-from-dynamodb-lambda.handler',
+      },
+      getBatchIdUpdateStatusToUploadedIdLambda: {
+        idLambda:
+          process.env.AWS_GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED_ID_LAMBDA ||
+          'GetBatchIdUpdateStatusToUploadedIdLambda',
+        lambdaName:
+          process.env.AWS_GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED_ID_LAMBDA_NAME ||
+          'get-batch-id-update-status-to-uploaded',
+        triggerSQS: false,
+        triggerS3: true,
+        createAPI: false,
+        path: './src/rebuild' + '/get-batchid-uploaded',
+        excludeFunction: 'get-batchid-update-status-to-uploaded.mjs',
+        lambdaHander: 'get-batchid-update-status-to-uploaded.handler',
+      },
+      getCsvReadDetailUpdateInProcessingLambda: {
+        idLambda:
+          process.env.AWS_GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA ||
+          'GetCsvReadDetailUpdateInProcessingLambda',
+        lambdaName:
+          process.env.AWS_GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA_NAME ||
+          'get-csv-read-detail-update-inprocessing-lambda',
+        triggerSQS: true,
+        triggerS3: false,
+        createAPI: false,
+        path: './src/rebuild' + '/get-csv-read-detail',
+        excludeFunction: 'get-csv-read-detail-update-inprocessing-lambda.mjs',
+        lambdaHander: 'get-csv-read-detail-update-inprocessing-lambda.handler',
+      },
     },
     apiGateway: {
       idLambda: process.env.AWS_API_GATEWAY_ID || 'LinhClassApiGateway',
+      lambdaList: {
+        createPresignedUrlLambda: {
+          idLambda: process.env.AWS_CREATE_PRESIGNED_URL_ID_LAMBDA || 'CreatePresignedUrlLambda',
+          api: 'get-url',
+          method: 'GET',
+        },
+        getStatusFromDynamoDBLambda: {
+          idLambda:
+            process.env.AWS_GET_STATUS_FROM_DYNAMODB_ID_LAMBDA || 'GetStatusFromDynamoDBLambda',
+          api: 'get-status',
+          method: 'GET',
+        },
+      },
     },
     policyActionList: {
       sqsNormalPolicy:

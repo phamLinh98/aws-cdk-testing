@@ -1,10 +1,10 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { envConfig } from './config/env';
-import { s3BucketSetup } from './src/s3-setup';
+import { s3Setup } from './src/s3-setup';
 import { secretSetup } from './src/secret-setup';
 import { sqsSetup } from './src/sqs-setup';
-import { dynamoDBSetup } from './src/dybamo-setup';
+import { dynamoDBSetup } from './src/dynamodb-setup';
 import { lambdaAddEventSource, lambdaListSetup } from './src/lambda-setup';
 import { rolesSetup } from './src/role-setup';
 import { apiGatewaySetup } from './src/api-gateway-setup';
@@ -18,76 +18,46 @@ export class ApiStack extends cdk.Stack {
     const { secret } = secretSetup(this, env);
 
     // Setup SQS
-    const { queue, policy, sqsEventSource } = sqsSetup(this);
+    const queue = sqsSetup(this, env);
 
     // Setup DynamoDB
-    const [
-      usersTable, 
-      uploadCsvTable, 
-      dynamoDbPolicy
-    ] = dynamoDBSetup(this, env);
-
-    const listTableInDynamoDB = [usersTable, uploadCsvTable];
+    const table = dynamoDBSetup(this, env);
 
     // Setup Lambda
-    const [
-      createPresignedUrlLambda,
-      getStatusFromDynamoDBLambda,
-      getBatchIdUpdateStatusToUploadedLambda,
-      getCsvReadDetailUpdateInProcessingLambda,
-    ] = lambdaListSetup(this, env, envConfig.buildPath);
+    const { listTriggerSqs, listTriggerS3, listSetApi, listLambda } = lambdaListSetup(this, env);
 
-    // Setup Lambda Event Source
-    lambdaAddEventSource(
-      getCsvReadDetailUpdateInProcessingLambda,
-      sqsEventSource[env.queue.main.idQueue],
-    );
-
-    const lambdaFuncList = [
-      createPresignedUrlLambda,
-      getStatusFromDynamoDBLambda,
-      getBatchIdUpdateStatusToUploadedLambda,
-      getCsvReadDetailUpdateInProcessingLambda,
-    ];
+    // Setup Lambda Event Source for SQS
+    listTriggerSqs.forEach((listLambda) => {
+      lambdaAddEventSource(listLambda, queue['main'].sqsEventSource);
+    });
 
     // Setup S3
-    const s3Setup = s3BucketSetup(
-      this,
-      env,
-      getBatchIdUpdateStatusToUploadedLambda,
-    );
+    const s3 = s3Setup(this, listLambda);
 
     // Setup Role for All Services
     rolesSetup(
-      lambdaFuncList,
+      listLambda,
       env,
-      listTableInDynamoDB,
-      policy[env.queue.main.idQueue],
-      dynamoDbPolicy,
-      queue[env.queue.main.idQueue],
-      usersTable,
-      uploadCsvTable,
+      queue['main'].policy,
+      queue['main'].queue,
       secret,
-      s3Setup
+      s3,
+      Object.values(table).map((table) => table.table),
+      Object.values(table).map((table) => table.policy),
     );
 
-    const infoForSettingAPIGateway = [
-      {
-        lambdaFunc: createPresignedUrlLambda,
-        api: 'get-url',
-        method: 'GET',
-      },
-      {
-        lambdaFunc: getStatusFromDynamoDBLambda,
-        api: 'get-status',
-        method: 'GET',
-      },
-    ];
+    const infoForSettingAPIGateway = Object.values(env.apiGateway.lambdaList).map((api: any) => ({
+      idLambda: api.idLambda,
+      api: api.api,
+      method: api.method,
+    }));
+
+    const updatedInfo = infoForSettingAPIGateway.map((info, index) => ({
+      ...info,
+      lambdaFunc: listSetApi[index],
+    }));
 
     // Setup API Gateway
-    apiGatewaySetup(this, env, infoForSettingAPIGateway);
-
-    // Specify the resource will be setting from here
-    // ...
+    apiGatewaySetup(this, env, updatedInfo);
   }
 }

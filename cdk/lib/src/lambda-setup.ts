@@ -1,69 +1,53 @@
 import { createNewLambdaFunction } from '../custom-constracts/csv-upload-resources';
 
-export const lambdaListSetup = (scope: any, env: any, BUILD_PATH: any) => {
-  const CREATE_PRESIGNED_URL_LAMBDA_INFO = {
-    path: BUILD_PATH + '/create-preurl',
-    excludeFunction: 'create-preurl-s3-update-status-uploading-lambda.mjs',
-    lambdaHander: 'create-preurl-s3-update-status-uploading-lambda.handler',
-  };
-  const GET_STATUS_FROM_DYNAMODB = {
-    path: BUILD_PATH + '/get-status',
-    excludeFunction: 'get-status-from-dynamodb-lambda.mjs',
-    lambdaHander: 'get-status-from-dynamodb-lambda.handler',
-  };
-  const GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED = {
-    path: BUILD_PATH + '/get-batchid-uploaded',
-    excludeFunction: 'get-batchid-update-status-to-uploaded.mjs',
-    lambdaHander: 'get-batchid-update-status-to-uploaded.handler',
-  };
+export const lambdaListSetup = (scope: any, env: any) => {
+  const listLambdaInfo = Object.values(env.lambda).map((bucket: any) => ({
+    idLambda: bucket.idLambda,
+    lambdaName: bucket.lambdaName,
+    triggerSQS: bucket.triggerSQS,
+    triggerS3: bucket.triggerS3,
+    path: bucket.path,
+    excludeFunction: bucket.excludeFunction,
+    lambdaHander: bucket.lambdaHander,
+    createAPI: bucket.createAPI,
+  }));
 
-  const GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA = {
-    path: BUILD_PATH + '/get-csv-read-detail',
-    excludeFunction: 'get-csv-read-detail-update-inprocessing-lambda.mjs',
-    lambdaHander: 'get-csv-read-detail-update-inprocessing-lambda.handler',
-  };
+  let listTriggerSqs = [] as any[];
+  let listTriggerS3 = [] as any[];
+  let listSetApi = [] as any[];
+  let listLambda = [] as any[];
 
-  const createPresignedUrlLambda = createNewLambdaFunction(
-    scope,
-    env.createPresignedUrlLambda.idLambda,
-    env.createPresignedUrlLambda.lambdaName,
-    CREATE_PRESIGNED_URL_LAMBDA_INFO.path,
-    CREATE_PRESIGNED_URL_LAMBDA_INFO.excludeFunction,
-    CREATE_PRESIGNED_URL_LAMBDA_INFO.lambdaHander,
-  );
+  listLambdaInfo.forEach((lambdaInfo) => {
+    const lambdaFunc = createNewLambdaFunction(
+      scope,
+      lambdaInfo.idLambda,
+      lambdaInfo.lambdaName,
+      lambdaInfo.path,
+      lambdaInfo.excludeFunction,
+      lambdaInfo.lambdaHander
+    );
 
-  const getStatusFromDynamoDBLambda = createNewLambdaFunction(
-    scope,
-    env.getStatusFromDynamoDBLambda.idLambda,
-    env.getStatusFromDynamoDBLambda.lambdaName,
-    GET_STATUS_FROM_DYNAMODB.path,
-    GET_STATUS_FROM_DYNAMODB.excludeFunction,
-    GET_STATUS_FROM_DYNAMODB.lambdaHander,
-  );
-  const getBatchIdUpdateStatusToUploadedLambda = createNewLambdaFunction(
-    scope,
-    env.getBatchIdUpdateStatusToUploadedIdLambda.idLambda,
-    env.getBatchIdUpdateStatusToUploadedIdLambda.lambdaName,
-    GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED.path,
-    GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED.excludeFunction,
-    GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED.lambdaHander,
-  );
+    if (lambdaInfo.triggerSQS) {
+      // Add SQS trigger here
+      listTriggerSqs.push(lambdaFunc);
+    }
 
-  const getCsvReadDetailUpdateInProcessingLambda = createNewLambdaFunction(
-    scope,
-    env.getCsvReadDetailUpdateInProcessingLambda.idLambda,
-    env.getCsvReadDetailUpdateInProcessingLambda.lambdaName,
-    GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA.path,
-    GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA.excludeFunction,
-    GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA.lambdaHander,
-  );
+    if (lambdaInfo.triggerS3) {
+      // Add S3 trigger here
+      listTriggerS3.push(lambdaFunc);
+    }
+    if (lambdaInfo.createAPI) {
+      // Add API here
+      listSetApi.push(lambdaFunc);
+    }
+  });
 
-  return [
-    createPresignedUrlLambda,
-    getStatusFromDynamoDBLambda,
-    getBatchIdUpdateStatusToUploadedLambda,
-    getCsvReadDetailUpdateInProcessingLambda,
-  ];
+  return {
+    listTriggerSqs: listTriggerSqs,
+    listTriggerS3: listTriggerS3,
+    listSetApi: listSetApi,
+    listLambda: listLambda,
+  }
 };
 
 export const lambdaAddEventSource = (lambdaFunc: any, eventSource: any) => {
