@@ -37,6 +37,26 @@ Resources:
     DeletionPolicy: Delete
     Metadata:
       aws:cdk:path: ServerlessApiStack/LinhClassSideQueue/Resource
+  LinhClassTake2Queue72CBFF23:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+      QueueName: linhclass-take-2-queue
+      VisibilityTimeout: 30
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/LinhClassTake2Queue/Resource
+  linhclassfukuqueue4D1235AE:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+      QueueName: linhclass-fuku-queue
+      VisibilityTimeout: 30
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/linhclass-fuku-queue/Resource
   UsersTable9725E9C8:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -170,26 +190,6 @@ Resources:
                       - Arn
                   - /*
           - Action:
-              - s3:PutObject
-              - s3:GetObject
-            Effect: Allow
-            Resource:
-              Fn::Join:
-                - ""
-                - - Fn::GetAtt:
-                      - LinhClassImageBucketF08CFB60
-                      - Arn
-                  - /*
-          - Action:
-              - sqs:SendMessage
-              - sqs:GetQueueAttributes
-              - sqs:GetQueueUrl
-            Effect: Allow
-            Resource:
-              Fn::GetAtt:
-                - LinhClassMainQueue02FE2B0D
-                - Arn
-          - Action:
               - s3:GetObject*
               - s3:GetBucket*
               - s3:List*
@@ -212,6 +212,17 @@ Resources:
                         - Arn
                     - /*
           - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassImageBucketF08CFB60
+                      - Arn
+                  - /*
+          - Action:
               - s3:GetObject*
               - s3:GetBucket*
               - s3:List*
@@ -233,6 +244,15 @@ Resources:
                         - LinhClassImageBucketF08CFB60
                         - Arn
                     - /*
+          - Action:
+              - sqs:SendMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassMainQueue02FE2B0D
+                - Arn
           - Action:
               - secretsmanager:GetSecretValue
               - secretsmanager:DescribeSecret
@@ -369,26 +389,6 @@ Resources:
                       - Arn
                   - /*
           - Action:
-              - s3:PutObject
-              - s3:GetObject
-            Effect: Allow
-            Resource:
-              Fn::Join:
-                - ""
-                - - Fn::GetAtt:
-                      - LinhClassImageBucketF08CFB60
-                      - Arn
-                  - /*
-          - Action:
-              - sqs:SendMessage
-              - sqs:GetQueueAttributes
-              - sqs:GetQueueUrl
-            Effect: Allow
-            Resource:
-              Fn::GetAtt:
-                - LinhClassMainQueue02FE2B0D
-                - Arn
-          - Action:
               - s3:GetObject*
               - s3:GetBucket*
               - s3:List*
@@ -411,6 +411,17 @@ Resources:
                         - Arn
                     - /*
           - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassImageBucketF08CFB60
+                      - Arn
+                  - /*
+          - Action:
               - s3:GetObject*
               - s3:GetBucket*
               - s3:List*
@@ -432,6 +443,15 @@ Resources:
                         - LinhClassImageBucketF08CFB60
                         - Arn
                     - /*
+          - Action:
+              - sqs:SendMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassMainQueue02FE2B0D
+                - Arn
           - Action:
               - secretsmanager:GetSecretValue
               - secretsmanager:DescribeSecret
@@ -568,26 +588,6 @@ Resources:
                       - Arn
                   - /*
           - Action:
-              - s3:PutObject
-              - s3:GetObject
-            Effect: Allow
-            Resource:
-              Fn::Join:
-                - ""
-                - - Fn::GetAtt:
-                      - LinhClassImageBucketF08CFB60
-                      - Arn
-                  - /*
-          - Action:
-              - sqs:SendMessage
-              - sqs:GetQueueAttributes
-              - sqs:GetQueueUrl
-            Effect: Allow
-            Resource:
-              Fn::GetAtt:
-                - LinhClassMainQueue02FE2B0D
-                - Arn
-          - Action:
               - s3:GetObject*
               - s3:GetBucket*
               - s3:List*
@@ -610,6 +610,17 @@ Resources:
                         - Arn
                     - /*
           - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassImageBucketF08CFB60
+                      - Arn
+                  - /*
+          - Action:
               - s3:GetObject*
               - s3:GetBucket*
               - s3:List*
@@ -631,6 +642,15 @@ Resources:
                         - LinhClassImageBucketF08CFB60
                         - Arn
                     - /*
+          - Action:
+              - sqs:SendMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassMainQueue02FE2B0D
+                - Arn
           - Action:
               - secretsmanager:GetSecretValue
               - secretsmanager:DescribeSecret
@@ -778,26 +798,6 @@ Resources:
                       - Arn
                   - /*
           - Action:
-              - s3:PutObject
-              - s3:GetObject
-            Effect: Allow
-            Resource:
-              Fn::Join:
-                - ""
-                - - Fn::GetAtt:
-                      - LinhClassImageBucketF08CFB60
-                      - Arn
-                  - /*
-          - Action:
-              - sqs:SendMessage
-              - sqs:GetQueueAttributes
-              - sqs:GetQueueUrl
-            Effect: Allow
-            Resource:
-              Fn::GetAtt:
-                - LinhClassMainQueue02FE2B0D
-                - Arn
-          - Action:
               - s3:GetObject*
               - s3:GetBucket*
               - s3:List*
@@ -820,6 +820,17 @@ Resources:
                         - Arn
                     - /*
           - Action:
+              - s3:PutObject
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - LinhClassImageBucketF08CFB60
+                      - Arn
+                  - /*
+          - Action:
               - s3:GetObject*
               - s3:GetBucket*
               - s3:List*
@@ -841,6 +852,15 @@ Resources:
                         - LinhClassImageBucketF08CFB60
                         - Arn
                     - /*
+          - Action:
+              - sqs:SendMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - LinhClassMainQueue02FE2B0D
+                - Arn
           - Action:
               - secretsmanager:GetSecretValue
               - secretsmanager:DescribeSecret
@@ -961,31 +981,6 @@ Resources:
           - Arn
     Metadata:
       aws:cdk:path: ServerlessApiStack/LinhClassCsvBucket/AllowBucketNotificationsToServerlessApiStackGetBatchIdUpdateStatusToUploadedIdLambdaACA2B3D6
-  LinhClassImageBucketF08CFB60:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: linhclass-avatar-bucket
-      CorsConfiguration:
-        CorsRules:
-          - AllowedHeaders:
-              - Content-Type
-              - Authorization
-            AllowedMethods:
-              - GET
-              - PUT
-              - POST
-              - DELETE
-              - HEAD
-            AllowedOrigins:
-              - "*"
-            ExposedHeaders:
-              - ETag
-      VersioningConfiguration:
-        Status: Enabled
-    UpdateReplacePolicy: Delete
-    DeletionPolicy: Delete
-    Metadata:
-      aws:cdk:path: ServerlessApiStack/LinhClassImageBucket/Resource
   BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC:
     Type: AWS::IAM::Role
     Properties:
@@ -1146,6 +1141,31 @@ Resources:
       - BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC
     Metadata:
       aws:cdk:path: ServerlessApiStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Resource
+  LinhClassImageBucketF08CFB60:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: linhclass-avatar-bucket
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - Content-Type
+              - Authorization
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+              - DELETE
+              - HEAD
+            AllowedOrigins:
+              - "*"
+            ExposedHeaders:
+              - ETag
+      VersioningConfiguration:
+        Status: Enabled
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/LinhClassImageBucket/Resource
   LinhClassApiGateway057CB1D3:
     Type: AWS::ApiGateway::RestApi
     Properties:

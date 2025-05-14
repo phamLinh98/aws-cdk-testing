@@ -21,7 +21,12 @@ export class ApiStack extends cdk.Stack {
     const { queue, policy, sqsEventSource } = sqsSetup(this);
 
     // Setup DynamoDB
-    const [usersTable, uploadCsvTable, dynamoDbPolicy] = dynamoDBSetup(this, env);
+    const [
+      usersTable, 
+      uploadCsvTable, 
+      dynamoDbPolicy
+    ] = dynamoDBSetup(this, env);
+
     const listTableInDynamoDB = [usersTable, uploadCsvTable];
 
     // Setup Lambda
@@ -46,7 +51,7 @@ export class ApiStack extends cdk.Stack {
     ];
 
     // Setup S3
-    const { csvBucket, imageBucket, s3Policy, s3ImagePolicy } = s3BucketSetup(
+    const s3Setup = s3BucketSetup(
       this,
       env,
       getBatchIdUpdateStatusToUploadedLambda,
@@ -59,14 +64,11 @@ export class ApiStack extends cdk.Stack {
       listTableInDynamoDB,
       policy[env.queue.main.idQueue],
       dynamoDbPolicy,
-      s3ImagePolicy,
-      s3Policy,
       queue[env.queue.main.idQueue],
       usersTable,
       uploadCsvTable,
-      csvBucket,
-      imageBucket,
       secret,
+      s3Setup
     );
 
     const infoForSettingAPIGateway = [

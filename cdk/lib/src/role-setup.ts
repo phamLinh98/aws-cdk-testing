@@ -6,14 +6,11 @@ export const rolesSetup = (
   listTableInDynamoDB:any,
   sqsPolicy:any,
   dynamoDbPolicy:any,
-  s3ImagePolicy:any,
-  s3Policy:any,
   mainQueue:any,
   usersTable:any,
   uploadCsvTable:any,
-  csvBucket:any,
-  imageBucket:any,
   secret:any,
+  s3Setup:any[]
 ) => {
    
   lambdaList.forEach((lambdaFunc:any) => {
@@ -44,20 +41,22 @@ export const rolesSetup = (
     env.grantRole.addToRolePolicy,
     dynamoDbPolicy,
   );
+  
+  //DO IT HERE 
+  s3Setup.forEach(({bucket, policy}) => { 
+    grantServiceListServiceReadWriteAnService(
+      lambdaList,
+      env.grantRole.addToRolePolicy,
+      policy,
+    );
 
-  // // Create Role to List Lambda function can access S3
-  grantServiceListServiceReadWriteAnService(
-    lambdaList, 
-    env.grantRole.addToRolePolicy, 
-    s3Policy
-  );
+    grantServiceAnServiceReadWriteAListService(
+      bucket, 
+      env.grantRole.grantReadWrite, 
+      lambdaList
+    )
+  });
 
-  // // Create Role to List Lambda function can access S3 Image
-  grantServiceListServiceReadWriteAnService(
-    lambdaList,
-    env.grantRole.addToRolePolicy,
-    s3ImagePolicy,
-  );
   grantServiceAnServiceReadWriteAListService(
     mainQueue,
     env.grantRole.grantSendMessages,
@@ -75,20 +74,6 @@ export const rolesSetup = (
   grantServiceAnServiceReadWriteAListService(
     uploadCsvTable,
     env.grantRole.readWriteData,
-    lambdaList,
-  );
-
-  // Create role to Csv read List Lambda function
-  grantServiceAnServiceReadWriteAListService(
-    csvBucket, 
-    env.grantRole.grantReadWrite, 
-    lambdaList
-  );
-
-  // Create role to S3 Image Bucket
-  grantServiceAnServiceReadWriteAListService(
-    imageBucket,
-    env.grantRole.grantReadWrite,
     lambdaList,
   );
 

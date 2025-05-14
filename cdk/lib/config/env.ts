@@ -2,7 +2,6 @@ export const envConfig = {
   nodeEnv: process.env.NODE_ENV || 'Debug',
   corsOrigin: process.env.CORS_ORIGIN || '*',
   buildPath: process.env.BUILD_PATH || './src/rebuild',
-
   // AWS configuration
   aws: {
     // Common AWS configuration
@@ -15,15 +14,20 @@ export const envConfig = {
       grantSendMessages: process.env.GRANT_SEND_MESSAGES || 'grantSendMessages',
     },
     secretName: process.env.AWS_SCRET_NAME || 'HitoEnvSecret',
-    // S3 Csv bucket configuration
-    csvBucket: {
-      idBucket: process.env.AWS_CSV_ID_BUCKET || 'LinhClassCsvBucket',
-      bucketName: process.env.AWS_CSV_BUCKET_NAME || 'linhclass-csv-bucket',
-    },
-    // S3 Image bucket configuration
-    imageBucket: {
-      idBucket: process.env.AWS_IMAGE_ID_BUCKET || 'LinhClassImageBucket',
-      bucketName: process.env.AWS_IMAGE_BUCKET_NAME || 'linhclass-avatar-bucket',
+    s3: {
+      csvBucket: {
+        idBucket: process.env.AWS_CSV_ID_BUCKET || 'LinhClassCsvBucket',
+        bucketName: process.env.AWS_CSV_BUCKET_NAME || 'linhclass-csv-bucket',
+        bucketArn: process.env.AWS_CSV_BUCKET_ARN || 'arn:aws:s3:::linhclass-csv-bucket',
+        triggerLambda: process.env.AWS_CSV_TRIGGER_LAMBDA || true,
+      },
+      // S3 Image bucket configuration
+      imageBucket: {
+        idBucket: process.env.AWS_IMAGE_ID_BUCKET || 'LinhClassImageBucket',
+        bucketName: process.env.AWS_IMAGE_BUCKET_NAME || 'linhclass-avatar-bucket',
+        bucketArn: process.env.AWS_IMAGE_BUCKET_ARN || 'arn:aws:s3:::linhclass-avatar-bucket',
+        triggerLambda: process.env.AWS_IMAGE_TRIGGER_LAMBDA || false,
+      },
     },
     // SQS configuration
     queue: {
@@ -78,13 +82,17 @@ export const envConfig = {
       },
     },
     // DynamoDB table names
-    usersTable: {
-      idTable: process.env.AWS_USERS_ID_TABLE || 'UsersTable',
-      tableName: process.env.AWS_USERS_TABLE_NAME || 'users',
-    },
-    uploadCsvTable: {
-      idTable: process.env.AWS_UPLOAD_CSV_ID_TABLE || 'UploadCsvTable',
-      tableName: process.env.AWS_UPLOAD_CSV_TABLE_NAME || 'upload-csv',
+    table:{
+      usersTable: {
+        idTable: process.env.AWS_USERS_ID_TABLE || 'UsersTable',
+        tableName: process.env.AWS_USERS_TABLE_NAME || 'users',
+        tableArn: process.env.AWS_USERS_TABLE_ARN || 'arn:aws:dynamodb:ap-northeast-1:650251698778:table/users',
+      },
+      uploadCsvTable: {
+        idTable: process.env.AWS_UPLOAD_CSV_ID_TABLE || 'UploadCsvTable',
+        tableName: process.env.AWS_UPLOAD_CSV_TABLE_NAME || 'upload-csv',
+        tableArn: process.env.AWS_UPLOAD_CSV_TABLE_ARN || 'arn:aws:dynamodb:ap-northeast-1:650251698778:table/upload-csv',
+      },
     },
     // Lambda function configuration
     createPresignedUrlLambda: {
