@@ -93,19 +93,19 @@ export const envConfig = {
       usersTable: {
         idTable: process.env.AWS_USERS_ID_TABLE || 'UsersTable',
         tableName: process.env.AWS_USERS_TABLE_NAME || 'users',
+        tableArn: 'arn:aws:dynamodb:ap-northeast-1:650251698778:table/users'
       },
       uploadCsvTable: {
         idTable: process.env.AWS_UPLOAD_CSV_ID_TABLE || 'UploadCsvTable',
         tableName: process.env.AWS_UPLOAD_CSV_TABLE_NAME || 'upload-csv',
+        tableArn: 'arn:aws:dynamodb:ap-northeast-1:650251698778:table/upload-csv'
       },
     },
     // Lambda function configuration
     lambda: {
       createPresignedUrlLambda: {
         idLambda: process.env.AWS_CREATE_PRESIGNED_URL_ID_LAMBDA || 'CreatePresignedUrlLambda',
-        lambdaName:
-          process.env.AWS_CREATE_PRESIGNED_URL_LAMBDA_NAME ||
-          'create-presigned-url-uploading-lambda',
+        lambdaName: process.env.AWS_CREATE_PRESIGNED_URL_LAMBDA_NAME || 'create-presigned-url-uploading-lambda',
         triggerSQS: false,
         triggerS3: true,
         createAPI: true,
@@ -114,10 +114,8 @@ export const envConfig = {
         lambdaHander: 'create-preurl-s3-update-status-uploading-lambda.handler',
       },
       getStatusFromDynamoDBLambda: {
-        idLambda:
-          process.env.AWS_GET_STATUS_FROM_DYNAMODB_ID_LAMBDA || 'GetStatusFromDynamoDBLambda',
-        lambdaName:
-          process.env.AWS_GET_STATUS_FROM_DYNAMODB_LAMBDA_NAME || 'get-status-from-dynamodb-lambda',
+        idLambda: process.env.AWS_GET_STATUS_FROM_DYNAMODB_ID_LAMBDA || 'GetStatusFromDynamoDBLambda',
+        lambdaName:process.env.AWS_GET_STATUS_FROM_DYNAMODB_LAMBDA_NAME || 'get-status-from-dynamodb-lambda',
         triggerSQS: false,
         triggerS3: false,
         createAPI: true,
@@ -126,12 +124,8 @@ export const envConfig = {
         lambdaHander: 'get-status-from-dynamodb-lambda.handler',
       },
       getBatchIdUpdateStatusToUploadedIdLambda: {
-        idLambda:
-          process.env.AWS_GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED_ID_LAMBDA ||
-          'GetBatchIdUpdateStatusToUploadedIdLambda',
-        lambdaName:
-          process.env.AWS_GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED_ID_LAMBDA_NAME ||
-          'get-batch-id-update-status-to-uploaded',
+        idLambda: process.env.AWS_GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED_ID_LAMBDA ||'GetBatchIdUpdateStatusToUploadedIdLambda',
+        lambdaName:process.env.AWS_GET_BATCH_ID_UPDATE_STATUS_TO_UPLOADED_ID_LAMBDA_NAME ||'get-batch-id-update-status-to-uploaded',
         triggerSQS: false,
         triggerS3: true,
         createAPI: false,
@@ -140,12 +134,8 @@ export const envConfig = {
         lambdaHander: 'get-batchid-update-status-to-uploaded.handler',
       },
       getCsvReadDetailUpdateInProcessingLambda: {
-        idLambda:
-          process.env.AWS_GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA ||
-          'GetCsvReadDetailUpdateInProcessingLambda',
-        lambdaName:
-          process.env.AWS_GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA_NAME ||
-          'get-csv-read-detail-update-inprocessing-lambda',
+        idLambda: process.env.AWS_GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA || 'GetCsvReadDetailUpdateInProcessingLambda',
+        lambdaName: process.env.AWS_GET_CSV_READ_DETAIL_UPDATE_IN_PROCESSING_LAMBDA_NAME || 'get-csv-read-detail-update-inprocessing-lambda',
         triggerSQS: true,
         triggerS3: false,
         createAPI: false,
@@ -169,18 +159,14 @@ export const envConfig = {
     },
     policyActionList: {
       sqsNormalPolicy:
-        process.env.LIST_SQS_NORMAL_ROLE_IN_IAM ||
-        'sqs:SendMessage,sqs:ReceiveMessage,sqs:DeleteMessage,sqs:GetQueueAttributes,sqs:ListQueues',
+      process.env.LIST_SQS_NORMAL_ROLE_IN_IAM || 'sqs:SendMessage,sqs:ReceiveMessage,sqs:DeleteMessage,sqs:GetQueueAttributes,sqs:ListQueues',
       sqsSidePolicy: process.env.LIST_SQS_SIDE_ROLE_IN_IAM || 'sqs:SendMessage,sqs:ListQueues',
       dynamoRoleList:
-        process.env.LIST_DYNAMO_ROLE_IN_IAM ||
-        '["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"]',
+        process.env.LIST_DYNAMO_ROLE_IN_IAM || '["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"]',
         s3RoleList: process.env.LIST_S3_ROLE_IN_IAM || 's3:PutObject,s3:GetObject',
     },
     policyStatement: {
-      actionList:
-        process.env.LIST_POLICY_STATEMENT_ACTION_LIST ||
-        'sqs:SendMessage,sqs:ReceiveMessage,sqs:DeleteMessage,sqs:GetQueueAttributes,sqs:ListQueues',
+      actionList:process.env.LIST_POLICY_STATEMENT_ACTION_LIST ||'sqs:SendMessage,sqs:ReceiveMessage,sqs:DeleteMessage,sqs:GetQueueAttributes,sqs:ListQueues',
       resourceList: 'queue/deadLetter',
     },
   },

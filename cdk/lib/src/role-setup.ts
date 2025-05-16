@@ -7,37 +7,41 @@ import { S3SetupType } from './s3-setup';
 import * as cdk from 'aws-cdk-lib';
 
 export const rolesSetup = (
-  lambdaList: any,
+  lambdaFuncList: any[],
   env: any,
   sqsPolicy: cdk.aws_iam.PolicyStatement,
   mainQueue: cdk.aws_sqs.Queue,
   secret: cdk.aws_secretsmanager.ISecret,
   s3Setup: S3SetupType,
   tableList: cdk.aws_dynamodb.Table[],
-  policyList: cdk.aws_iam.PolicyStatement[],
+  policyListLambdaCanAccessDynamoDB: cdk.aws_iam.PolicyStatement[],
 ) => {
-  lambdaList.forEach((lambdaFunc: any) => {
+
+  // Create Role to List Lambda function can access DynamoDB to Read and Write
+  lambdaFuncList.forEach((lambdaFunc: any) => {
     grantServiceListServiceReadWriteAnService(tableList, env.grantRole.readWriteData, lambdaFunc);
   });
-
+  
   // Creare Role to List Lambda function can access SQS in List Queue Role
   grantServiceListServiceReadWriteAnService(
-    lambdaList,
+    lambdaFuncList,
     env.grantRole.addToRolePolicy,
     settingNewPolicy(['*'], ['*']),
   );
 
-  // // Create Role to List Lambda function can access SQS
-  grantServiceListServiceReadWriteAnService(lambdaList, env.grantRole.addToRolePolicy, sqsPolicy);
+  // Create Policy to List Lambda function can access SQS
+  grantServiceListServiceReadWriteAnService(lambdaFuncList, env.grantRole.addToRolePolicy, sqsPolicy);
 
-  // Create Role to List Lambda function can access DynamoDB
-  grantServiceListServiceReadWriteAnService(lambdaList, env.grantRole.addToRolePolicy, policyList);
+  // Create Policy to List Lambda function can access DynamoDB to Read and Write
+  policyListLambdaCanAccessDynamoDB.forEach((tablePolicy) => {
+    grantServiceListServiceReadWriteAnService(lambdaFuncList, env.grantRole.addToRolePolicy, tablePolicy);
+  });
 
   // Create Role to List Lambda function can access S3
   Object.keys(s3Setup).forEach((key) => {
     const s3SetupItem = s3Setup[key];
     grantServiceListServiceReadWriteAnService(
-      lambdaList,
+      lambdaFuncList,
       env.grantRole.addToRolePolicy,
       s3SetupItem.policy,
     );
@@ -45,7 +49,7 @@ export const rolesSetup = (
     grantServiceAnServiceReadWriteAListService(
       s3SetupItem.bucket,
       env.grantRole.grantReadWrite,
-      lambdaList,
+      lambdaFuncList,
     );
   });
 
@@ -53,14 +57,14 @@ export const rolesSetup = (
   grantServiceAnServiceReadWriteAListService(
     mainQueue,
     env.grantRole.grantSendMessages,
-    lambdaList,
+    lambdaFuncList,
   );
 
   // Create Role to table dynamoDB can access ListLambda function
   tableList.forEach((table) => {
-    grantServiceAnServiceReadWriteAListService(table, env.grantRole.readWriteData, lambdaList);
+    grantServiceAnServiceReadWriteAListService(table, env.grantRole.readWriteData, lambdaFuncList);
   });
 
   // setting secretManager for all lambda function using secret
-  grantServiceAnServiceReadWriteAListService(secret, env.grantRole.grandRead, lambdaList);
+  grantServiceAnServiceReadWriteAListService(secret, env.grantRole.grandRead, lambdaFuncList);
 };
