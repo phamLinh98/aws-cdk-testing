@@ -5,3 +5,4 @@ cdk.out
 src/build
 .idea
 .env
+synth.yml
