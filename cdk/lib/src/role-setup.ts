@@ -3,8 +3,9 @@ import {
   grantServiceListServiceReadWriteAnService,
   settingNewPolicy,
 } from '../custom-constracts/csv-upload-resources';
-import { S3SetupType } from './s3-setup';
+
 import * as cdk from 'aws-cdk-lib';
+import { S3SetupType } from './interface/s3';
 
 export const rolesSetup = (
   lambdaFuncList: any[],
