@@ -156,8 +156,7 @@ export function settingS3Notification(bucketName: cdk.aws_s3.Bucket, filterFile:
 export function settingApiGatewayRoleCors(scope: any, apiGatewayName: string) {
   return new cdk.aws_apigateway.RestApi(scope, apiGatewayName, {
     restApiName: apiGatewayName,
-    // enable CORS for the API
-    defaultCorsPreflightOptions: configCorsApiGateway('http://localhost:5173', [
+    defaultCorsPreflightOptions: configCorsApiGateway(envConfig.local, [
       'Content-Type',
       'Authorization',
       'X-Api-Key',

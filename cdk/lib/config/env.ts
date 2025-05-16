@@ -2,6 +2,7 @@ export const envConfig = {
   nodeEnv: process.env.NODE_ENV || 'Debug',
   corsOrigin: process.env.CORS_ORIGIN || '*',
   buildPath: process.env.BUILD_PATH || './src/rebuild',
+  local: process.env.CORS_ORIGIN || 'http://localhost:5173',
   // AWS configuration
   aws: {
     // Common AWS configuration
@@ -19,12 +20,14 @@ export const envConfig = {
         idBucket: process.env.AWS_CSV_ID_BUCKET || 'LinhClassCsvBucket1',
         bucketName: process.env.AWS_CSV_BUCKET_NAME || 'linhclass-csv-bucket',
         triggerLambda: process.env.AWS_CSV_TRIGGER_LAMBDA || 1,
+        s3RoleList: process.env.LIST_S3_ROLE_IN_IAM || 's3:PutObject,s3:GetObject',
       },
       // S3 Image bucket configuration
       imageBucket: {
         idBucket: process.env.AWS_MAGE_ID_BUCKET || 'LinhClassImageBucket1',
         bucketName: process.env.AWS_IMAGE_BUCKET_NAME || 'linhclass-avatar-bucket',
         triggerLambda: process.env.AWS_IMAGE_TRIGGER_LAMBDA || 0,
+        s3RoleList: process.env.LIST_S3_ROLE_IN_IAM || 's3:PutObject,s3:GetObject',
       },
     },
     // SQS configuration
@@ -45,6 +48,12 @@ export const envConfig = {
         maxCurrency: process.env.AWS_MAX_CURRENTCY || 5,
         isDeadLeterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 0,
         deadLetterQueueName: 'deadLetter',
+        deadQueue: {
+          idQueue: process.env.AWS_DEAD_LTTER_ID_QUEUE || 'LinhClassDeadLetterQueue',
+          queueName: process.env.AWS_DEAD_LTTER_QUEUE_NAME || 'linhclass-dead-letter-queue',
+          maxTime: process.env.AWS_DEAD_LETTER_QUEUE_MAX_TIME || 14,
+          isDeadLeterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 1,
+        },
         policyActionList: 'sqsNormalPolicy',
       },
       sideDeadLetter: {
@@ -146,20 +155,17 @@ export const envConfig = {
       },
     },
     apiGateway: {
-      idLambda: process.env.AWS_API_GATEWAY_ID || 'LinhClassApiGateway',
-      lambdaList: {
+        idLambda: process.env.AWS_API_GATEWAY_ID || 'LinhClassApiGateway',
         createPresignedUrlLambda: {
           idLambda: process.env.AWS_CREATE_PRESIGNED_URL_ID_LAMBDA || 'CreatePresignedUrlLambda',
           api: 'get-url',
           method: 'GET',
         },
         getStatusFromDynamoDBLambda: {
-          idLambda:
-            process.env.AWS_GET_STATUS_FROM_DYNAMODB_ID_LAMBDA || 'GetStatusFromDynamoDBLambda',
+          idLambda: process.env.AWS_GET_STATUS_FROM_DYNAMODB_ID_LAMBDA || 'GetStatusFromDynamoDBLambda',
           api: 'get-status',
           method: 'GET',
         },
-      },
     },
     policyActionList: {
       sqsNormalPolicy:
@@ -169,7 +175,7 @@ export const envConfig = {
       dynamoRoleList:
         process.env.LIST_DYNAMO_ROLE_IN_IAM ||
         '["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"]',
-      s3RoleList: process.env.LIST_S3_ROLE_IN_IAM || '["s3:PutObject", "s3:GetObject"]',
+        s3RoleList: process.env.LIST_S3_ROLE_IN_IAM || 's3:PutObject,s3:GetObject',
     },
     policyStatement: {
       actionList:

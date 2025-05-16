@@ -1,6 +1,3 @@
-import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
-import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
-import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { Construct } from 'constructs';
 import { envConfig } from '../config/env';
 import {
@@ -36,32 +33,60 @@ export type SqsSetupType = {
   [key: string]: SqsSetupItemType;
 };
 
+// export const queue = {
+//   deadLetter: {
+//     idQueue: process.env.AWS_DEAD_LTTER_ID_QUEUE || 'LinhClassDeadLetterQueue',
+//     queueName: process.env.AWS_DEAD_LTTER_QUEUE_NAME || 'linhclass-dead-letter-queue',
+//     maxTime: process.env.AWS_DEAD_LETTER_QUEUE_MAX_TIME || 14,
+//     isDeadLeterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 1,
+//   },
+//   main: {
+//     idQueue: process.env.AWS_MAIN_ID_QUEUE || 'LinhClassMainQueue',
+//     queueName: process.env.AWS_MAIN_QUEUE_NAME || 'linhclass-lambda-call-to-queue',
+//     maxTime: process.env.AWS_MAIN_QUEUE_MAX_TIME || 14,
+//     visibilityTimeout: process.env.AWS_MAIN_QUEUE_VISIBILITY_TIMEOUT || 30,
+//     maxReceiveCount: process.env.AWS_MAIN_MAX_RETRIES || 5,
+//     batchSize: process.env.AWS_BATCH_SIZE || 10,
+//     maxCurrency: process.env.AWS_MAX_CURRENTCY || 5,
+//     isDeadLeterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 0,
+//     deadLetterQueueName: 'deadLetter',
+//     deadQueue: {
+//       idQueue: process.env.AWS_DEAD_LTTER_ID_QUEUE || 'LinhClassDeadLetterQueue',
+//       queueName: process.env.AWS_DEAD_LTTER_QUEUE_NAME || 'linhclass-dead-letter-queue',
+//       maxTime: process.env.AWS_DEAD_LETTER_QUEUE_MAX_TIME || 14,
+//       isDeadLeterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 1,
+//     },
+//     policyActionList: 'sqsNormalPolicy',
+//   }
+// };
+
 export const sqsSetup = (scope: Construct, env: any) => {
   const envQueue = env.queue as EnvSqsSetupType;
-  const result = {} as SqsSetupType;
+  const keys = Object.keys(envQueue).sort(
+    (a, b) => +envQueue[a].isDeadLeterQueue - +envQueue[b].isDeadLeterQueue
+  );
 
-  for (const key of Object.keys(envQueue)) {
+  const result = {} as SqsSetupType;
+  for (const key of keys) {
     const queueInfo = envQueue[key];
     const sqsSetupItem = {} as SqsSetupItemType;
 
-    // Setup queu
-    switch (+envQueue[key].isDeadLeterQueue) {
-      // Normal Queue
+    switch (+queueInfo.isDeadLeterQueue) {
       case 0: {
-        const deadLetterQueue = result[queueInfo.deadLetterQueueName!].queue ?? undefined;
-        // const deadLetterQueue = result['deadLetter'].queue ?? undefined;
+        const dlq = queueInfo.deadLetterQueueName
+          ? result[queueInfo.deadLetterQueueName]?.queue
+          : undefined;
         sqsSetupItem.queue = createNewSQS(
           scope,
           queueInfo.idQueue,
           queueInfo.queueName,
           +(queueInfo.maxTime ?? 14),
           +(queueInfo.visibilityTimeout ?? 30),
-          deadLetterQueue,
+          dlq,
           +(queueInfo.maxReceiveCount ?? 5),
         );
         break;
       }
-      // Dead Letter Queue
       case 1: {
         sqsSetupItem.queue = createNewDeadLetterQueue(
           scope,
@@ -71,23 +96,18 @@ export const sqsSetup = (scope: Construct, env: any) => {
         );
         break;
       }
-      // Other Queue Type: 3,4,5...
     }
 
-    // Setup Policy
     const keyPolicy = queueInfo.policyActionList! as keyof typeof envConfig.aws.policyActionList;
     const policyActionString = envConfig.aws.policyActionList[keyPolicy] || '';
     const policyActionList = policyActionString
       .split(',')
       .map((item) => item.trim())
-      .filter((action) => action.includes(':')); // Ensure valid action strings
-    const isSetPolicy = policyActionList.length > 0;
-    if (isSetPolicy) {
+      .filter((action) => action.includes(':'));
+    if (policyActionList.length) {
       sqsSetupItem.policy = settingNewPolicy(policyActionList, [sqsSetupItem.queue.queueArn]);
     }
 
-    // Setup Event Source
-    // Check if batchSize and maxCurrency are defined then setup SQS Event Source
     if (queueInfo.batchSize && queueInfo.maxCurrency) {
       sqsSetupItem.sqsEventSource = settingSqsEventSource(
         sqsSetupItem.queue,
@@ -98,6 +118,5 @@ export const sqsSetup = (scope: Construct, env: any) => {
 
     result[key] = sqsSetupItem;
   }
-
   return result;
 };

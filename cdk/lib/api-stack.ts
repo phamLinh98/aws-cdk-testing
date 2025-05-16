@@ -14,29 +14,28 @@ export class ApiStack extends cdk.Stack {
     super(scope, id, props);
     const env = envConfig.aws;
 
-    // Setup Secret
     const { secret } = secretSetup(this, env);
 
-    // Setup SQS
     const queue = sqsSetup(this, env);
 
-    // Setup DynamoDB
     const table = dynamoDBSetup(this, env);
 
-    // Setup Lambda
-    const { listTriggerSqs, listTriggerS3, listSetApi, listLambda } = lambdaListSetup(this, env);
+    const result = lambdaListSetup(this, env);
 
-    // Setup Lambda Event Source for SQS
-    listTriggerSqs.forEach((listLambda) => {
-      lambdaAddEventSource(listLambda, queue['main'].sqsEventSource);
-    });
+    lambdaAddEventSource(result['getCsvReadDetailUpdateInProcessingLambda'].lambda, queue['main'].sqsEventSource);
 
-    // Setup S3
-    const s3 = s3Setup(this, listLambda);
+    
+    const s3 = s3Setup(this, result['getBatchIdUpdateStatusToUploadedIdLambda'].lambda);
 
-    // Setup Role for All Services
+    const listLambdaSettingRole = [
+      result['createPresignedUrlLambda'].lambda,
+      result['getStatusFromDynamoDBLambda'].lambda,
+      result['getBatchIdUpdateStatusToUploadedIdLambda'].lambda,
+      result['getCsvReadDetailUpdateInProcessingLambda'].lambda,
+    ]
+
     rolesSetup(
-      listLambda,
+      listLambdaSettingRole,
       env,
       queue['main'].policy,
       queue['main'].queue,
@@ -46,18 +45,17 @@ export class ApiStack extends cdk.Stack {
       Object.values(table).map((table) => table.policy),
     );
 
-    const infoForSettingAPIGateway = Object.values(env.apiGateway.lambdaList).map((api: any) => ({
-      idLambda: api.idLambda,
-      api: api.api,
-      method: api.method,
-    }));
-
-    const updatedInfo = infoForSettingAPIGateway.map((info, index) => ({
-      ...info,
-      lambdaFunc: listSetApi[index],
-    }));
-
-    // Setup API Gateway
-    apiGatewaySetup(this, env, updatedInfo);
+    apiGatewaySetup(this, env, [
+      {
+        lambdaFunc: result['createPresignedUrlLambda'].lambda,
+        api: envConfig.aws.apiGateway['createPresignedUrlLambda'].api,
+        method: envConfig.aws.apiGateway['createPresignedUrlLambda'].method,
+      },
+      {
+        lambdaFunc: result['getStatusFromDynamoDBLambda'].lambda,
+        api: envConfig.aws.apiGateway['getStatusFromDynamoDBLambda'].api,
+        method: envConfig.aws.apiGateway['getStatusFromDynamoDBLambda'].method,
+      },
+    ]);
   }
 }

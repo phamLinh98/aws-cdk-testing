@@ -1,23 +1,31 @@
 import { createNewLambdaFunction } from '../custom-constracts/csv-upload-resources';
+import * as cdk from 'aws-cdk-lib';
+
+export type LambdaSetUpItemType = {
+  lambda: cdk.aws_lambda.Function
+};
+
+export type LambdaSetUpType = {
+  [key: string]: LambdaSetUpItemType;
+};
+
+type EnvLambdaType = {
+  [key:string]: {
+  idLambda: string;
+  lambdaName: string;
+  path: string;
+  excludeFunction: string;
+  lambdaHander: string;
+  }
+}
 
 export const lambdaListSetup = (scope: any, env: any) => {
-  const listLambdaInfo = Object.values(env.lambda).map((bucket: any) => ({
-    idLambda: bucket.idLambda,
-    lambdaName: bucket.lambdaName,
-    triggerSQS: bucket.triggerSQS,
-    triggerS3: bucket.triggerS3,
-    path: bucket.path,
-    excludeFunction: bucket.excludeFunction,
-    lambdaHander: bucket.lambdaHander,
-    createAPI: bucket.createAPI,
-  }));
+  const envLambda = env.lambda as EnvLambdaType;
 
-  let listTriggerSqs = [] as any[];
-  let listTriggerS3 = [] as any[];
-  let listSetApi = [] as any[];
-  let listLambda = [] as any[];
+  const result = {} as LambdaSetUpType;
 
-  listLambdaInfo.forEach((lambdaInfo) => {
+  Object.keys(envLambda).forEach((key) => {
+    const lambdaInfo = envLambda[key];
     const lambdaFunc = createNewLambdaFunction(
       scope,
       lambdaInfo.idLambda,
@@ -27,29 +35,14 @@ export const lambdaListSetup = (scope: any, env: any) => {
       lambdaInfo.lambdaHander
     );
 
-    if (lambdaInfo.triggerSQS) {
-      // Add SQS trigger here
-      listTriggerSqs.push(lambdaFunc);
-    }
-
-    if (lambdaInfo.triggerS3) {
-      // Add S3 trigger here
-      listTriggerS3.push(lambdaFunc);
-    }
-    if (lambdaInfo.createAPI) {
-      // Add API here
-      listSetApi.push(lambdaFunc);
-    }
+    result[key] = {
+      lambda: lambdaFunc   
+    };
   });
 
-  return {
-    listTriggerSqs: listTriggerSqs,
-    listTriggerS3: listTriggerS3,
-    listSetApi: listSetApi,
-    listLambda: listLambda,
-  }
+  return result;
 };
 
-export const lambdaAddEventSource = (lambdaFunc: any, eventSource: any) => {
+export const lambdaAddEventSource = (lambdaFunc: cdk.aws_lambda.Function, eventSource: any) => {
   lambdaFunc.addEventSource(eventSource);
 };
