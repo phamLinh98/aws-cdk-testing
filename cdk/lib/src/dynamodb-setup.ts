@@ -5,22 +5,8 @@ import {
 } from '../custom-constracts/csv-upload-resources';
 import * as cdk from 'aws-cdk-lib';
 import { envConfig } from '../config/env';
+import { DynamoDBSetupItemType, DynamoDBSetupType, EnvDynamoDBSetupType } from './interface/dynamo';
 
-type EnvDynamoDBSetupType = {
-  [key: string]: {
-    idTable: string;
-    tableName: string;
-  };
-};
-
-export type DynamoDBSetupItemType = {
-  table: cdk.aws_dynamodb.Table;
-  policy: cdk.aws_iam.PolicyStatement;
-};
-
-export type DynamoDBSetupType = {
-  [key: string]: DynamoDBSetupItemType;
-};
 
 export const dynamoDBSetup = (scope: Construct, env: any) => {
   const envDynamoDB = env.table as EnvDynamoDBSetupType;

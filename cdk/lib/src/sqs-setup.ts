@@ -6,59 +6,7 @@ import {
   settingNewPolicy,
   settingSqsEventSource,
 } from '../custom-constracts/csv-upload-resources';
-import * as cdk from 'aws-cdk-lib';
-
-type EnvSqsSetupType = {
-  [key: string]: {
-    idQueue: string;
-    queueName: string;
-    maxTime?: string;
-    visibilityTimeout?: string;
-    maxReceiveCount?: string;
-    batchSize?: string;
-    maxCurrency?: string;
-    isDeadLeterQueue?: any;
-    deadLetterQueueName?: string;
-    policyActionList?: string;
-  };
-};
-
-export type SqsSetupItemType = {
-  queue: cdk.aws_sqs.Queue;
-  policy: cdk.aws_iam.PolicyStatement;
-  sqsEventSource: cdk.aws_lambda_event_sources.SqsEventSource;
-};
-
-export type SqsSetupType = {
-  [key: string]: SqsSetupItemType;
-};
-
-// export const queue = {
-//   deadLetter: {
-//     idQueue: process.env.AWS_DEAD_LTTER_ID_QUEUE || 'LinhClassDeadLetterQueue',
-//     queueName: process.env.AWS_DEAD_LTTER_QUEUE_NAME || 'linhclass-dead-letter-queue',
-//     maxTime: process.env.AWS_DEAD_LETTER_QUEUE_MAX_TIME || 14,
-//     isDeadLeterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 1,
-//   },
-//   main: {
-//     idQueue: process.env.AWS_MAIN_ID_QUEUE || 'LinhClassMainQueue',
-//     queueName: process.env.AWS_MAIN_QUEUE_NAME || 'linhclass-lambda-call-to-queue',
-//     maxTime: process.env.AWS_MAIN_QUEUE_MAX_TIME || 14,
-//     visibilityTimeout: process.env.AWS_MAIN_QUEUE_VISIBILITY_TIMEOUT || 30,
-//     maxReceiveCount: process.env.AWS_MAIN_MAX_RETRIES || 5,
-//     batchSize: process.env.AWS_BATCH_SIZE || 10,
-//     maxCurrency: process.env.AWS_MAX_CURRENTCY || 5,
-//     isDeadLeterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 0,
-//     deadLetterQueueName: 'deadLetter',
-//     deadQueue: {
-//       idQueue: process.env.AWS_DEAD_LTTER_ID_QUEUE || 'LinhClassDeadLetterQueue',
-//       queueName: process.env.AWS_DEAD_LTTER_QUEUE_NAME || 'linhclass-dead-letter-queue',
-//       maxTime: process.env.AWS_DEAD_LETTER_QUEUE_MAX_TIME || 14,
-//       isDeadLeterQueue: process.env.AWS_DEAD_LETTER_IS_DELETE || 1,
-//     },
-//     policyActionList: 'sqsNormalPolicy',
-//   }
-// };
+import { EnvSqsSetupType, SqsSetupItemType, SqsSetupType } from './interface/sqs';
 
 export const sqsSetup = (scope: Construct, env: any) => {
   const envQueue = env.queue as EnvSqsSetupType;

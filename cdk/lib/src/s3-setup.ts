@@ -7,24 +7,7 @@ import {
 
 import * as cdk from 'aws-cdk-lib';
 import { envConfig } from '../config/env';
-
-export type S3SetupItemType = {
-  bucket: cdk.aws_s3.Bucket;
-  policy: cdk.aws_iam.PolicyStatement;
-};
-
-export type S3SetupType = {
-  [key: string]: S3SetupItemType;
-};
-
-type EnvS3Type = {
-  [key: string]: {
-    idBucket: string;
-    bucketName: string;
-    triggerLambda: string;
-    s3RoleList: string;
-  };
-};
+import { EnvS3Type, S3SetupType } from './interface/s3';
 
 export const s3Setup = (scope: Construct, lambdaFunction: cdk.aws_lambda.Function) => {
   const envS3 = envConfig.aws.s3 as EnvS3Type;

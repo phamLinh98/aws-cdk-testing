@@ -1,23 +1,6 @@
 import { createNewLambdaFunction } from '../custom-constracts/csv-upload-resources';
 import * as cdk from 'aws-cdk-lib';
-
-export type LambdaSetUpItemType = {
-  lambda: cdk.aws_lambda.Function
-};
-
-export type LambdaSetUpType = {
-  [key: string]: LambdaSetUpItemType;
-};
-
-type EnvLambdaType = {
-  [key:string]: {
-  idLambda: string;
-  lambdaName: string;
-  path: string;
-  excludeFunction: string;
-  lambdaHander: string;
-  }
-}
+import { EnvLambdaType, LambdaSetUpType } from './interface/lambda';
 
 export const lambdaListSetup = (scope: any, env: any) => {
   const envLambda = env.lambda as EnvLambdaType;
