@@ -7,7 +7,6 @@ import * as cdk from 'aws-cdk-lib';
 import { envConfig } from '../config/env';
 import { DynamoDBSetupItemType, DynamoDBSetupType, EnvDynamoDBSetupType } from './interface/dynamo';
 
-
 export const dynamoDBSetup = (scope: Construct, env: any) => {
   const envDynamoDB = env.table as EnvDynamoDBSetupType;
   const result = {} as DynamoDBSetupType;
@@ -16,10 +15,7 @@ export const dynamoDBSetup = (scope: Construct, env: any) => {
     const tableInfo = envDynamoDB[key];
     const dynamoDBSetupItem = {} as DynamoDBSetupItemType;
 
-    // Setup table
     dynamoDBSetupItem.table = createNewTableDynamoDB(scope, tableInfo.idTable, tableInfo.tableName);
-
-    // Setup policy
     dynamoDBSetupItem.policy = settingNewPolicy(
       JSON.parse(envConfig.aws.policyActionList.dynamoRoleList),
       [dynamoDBSetupItem.table.tableArn],

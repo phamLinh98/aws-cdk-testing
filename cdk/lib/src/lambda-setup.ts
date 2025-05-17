@@ -1,27 +1,26 @@
 import { createNewLambdaFunction } from '../custom-constracts/csv-upload-resources';
 import * as cdk from 'aws-cdk-lib';
-import { EnvLambdaType, LambdaSetUpType } from './interface/lambda';
+import { EnvLambdaSetupType, LambdaSetUpItemType, LambdaSetUpType } from './interface/lambda';
 
 export const lambdaListSetup = (scope: any, env: any) => {
-  const envLambda = env.lambda as EnvLambdaType;
-
+  const envLambda = env.lambda as EnvLambdaSetupType;
   const result = {} as LambdaSetUpType;
 
-  Object.keys(envLambda).forEach((key) => {
+  for (const key of Object.keys(envLambda)) {
     const lambdaInfo = envLambda[key];
-    const lambdaFunc = createNewLambdaFunction(
+    const lambdaSetupItem = {} as LambdaSetUpItemType;
+
+    lambdaSetupItem.lambda = createNewLambdaFunction(
       scope,
       lambdaInfo.idLambda,
       lambdaInfo.lambdaName,
       lambdaInfo.path,
       lambdaInfo.excludeFunction,
-      lambdaInfo.lambdaHander
+      lambdaInfo.lambdaHander,
     );
 
-    result[key] = {
-      lambda: lambdaFunc   
-    };
-  });
+    result[key] = lambdaSetupItem;
+  }
 
   return result;
 };

@@ -11,7 +11,7 @@ import { EnvSqsSetupType, SqsSetupItemType, SqsSetupType } from './interface/sqs
 export const sqsSetup = (scope: Construct, env: any) => {
   const envQueue = env.queue as EnvSqsSetupType;
   const keys = Object.keys(envQueue).sort(
-    (a, b) => +envQueue[a].isDeadLeterQueue - +envQueue[b].isDeadLeterQueue
+    (a, b) => +envQueue[a].isDeadLeterQueue - +envQueue[b].isDeadLeterQueue,
   );
 
   const result = {} as SqsSetupType;
@@ -35,7 +35,8 @@ export const sqsSetup = (scope: Construct, env: any) => {
         );
         break;
       }
-      case 1: {
+      case 1:
+      default: {
         sqsSetupItem.queue = createNewDeadLetterQueue(
           scope,
           queueInfo.idQueue,

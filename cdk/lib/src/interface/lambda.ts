@@ -1,14 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 
-export type LambdaSetUpItemType = {
-  lambda: cdk.aws_lambda.Function;
-};
-
-export type LambdaSetUpType = {
-  [key: string]: LambdaSetUpItemType;
-};
-
-export type EnvLambdaType = {
+export type EnvLambdaSetupType = {
   [key: string]: {
     idLambda: string;
     lambdaName: string;
@@ -16,4 +8,12 @@ export type EnvLambdaType = {
     excludeFunction: string;
     lambdaHander: string;
   };
+};
+
+export type LambdaSetUpItemType = {
+  lambda: cdk.aws_lambda.Function;
+};
+
+export type LambdaSetUpType = {
+  [key: string]: LambdaSetUpItemType;
 };

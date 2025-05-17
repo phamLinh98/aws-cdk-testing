@@ -5,51 +5,64 @@ import {
 } from '../custom-constracts/csv-upload-resources';
 
 import * as cdk from 'aws-cdk-lib';
-import { S3SetupType } from './interface/s3';
-import { SqsSetupType } from './interface/sqs';
+import { S3SetupItemType, S3SetupType } from './interface/s3';
 import { lambdaAddEventSource } from './lambda-setup';
 import { LambdaSetUpType } from './interface/lambda';
+import { SqsSetupType } from './interface/sqs';
+import { DynamoDBSetupType } from './interface/dynamo';
+import { envConfig } from '../config/env';
 
-export const rolesSetup = (
-  result: any,
-  env: any,
-  queueMain: any,
-  secret: cdk.aws_secretsmanager.ISecret,
+export const roleSetup = (
+  lambdaSetUp: LambdaSetUpType,
+  sqsSetup: SqsSetupType,
+  dynamoDBSetup: DynamoDBSetupType,
   s3Setup: S3SetupType,
-  tableList: cdk.aws_dynamodb.Table[],
-  policyListLambdaCanAccessDynamoDB: cdk.aws_iam.PolicyStatement[],
+  secret: cdk.aws_secretsmanager.ISecret,
 ) => {
+  const env = envConfig.aws;
 
-  const lambdaList = [
-    result['createPresignedUrlLambda'].lambda,
-    result['getStatusFromDynamoDBLambda'].lambda,
-    result['getBatchIdUpdateStatusToUploadedIdLambda'].lambda,
-    result['getCsvReadDetailUpdateInProcessingLambda'].lambda,
-  ] 
+  const lambdaList = Object.keys(lambdaSetUp).map((key) => {
+    return lambdaSetUp[key].lambda;
+  }) as cdk.aws_lambda.IFunction[];
 
-  // Create Role to List Lambda function can access DynamoDB to Read and Write
-  lambdaList.forEach((lambdaFunc: any) => {
+  const tableList = Object.keys(dynamoDBSetup).map((key) => {
+    return dynamoDBSetup[key].table;
+  }) as cdk.aws_dynamodb.Table[];
+
+  const policyListLambdaCanAccessDynamoDB = Object.keys(dynamoDBSetup).map((key) => {
+    return dynamoDBSetup[key].policy;
+  }) as cdk.aws_iam.PolicyStatement[];
+
+  const s3List = Object.keys(s3Setup).map((key) => {
+    return s3Setup[key];
+  }) as S3SetupItemType[];
+
+  lambdaList.forEach((lambdaFunc: cdk.aws_lambda.IFunction) => {
     grantServiceListServiceReadWriteAnService(tableList, env.grantRole.readWriteData, lambdaFunc);
   });
-  
-  // Creare Role to List Lambda function can access SQS in List Queue Role
+
   grantServiceListServiceReadWriteAnService(
     lambdaList,
     env.grantRole.addToRolePolicy,
     settingNewPolicy(['*'], ['*']),
   );
 
-  // Create Policy to List Lambda function can access SQS
-  grantServiceListServiceReadWriteAnService(lambdaList, env.grantRole.addToRolePolicy, queueMain.policy);
+  const MAIN_QUEUE_NAME = env.constants.MAIN_QUEUE_NAME;
+  grantServiceListServiceReadWriteAnService(
+    lambdaList,
+    env.grantRole.addToRolePolicy,
+    sqsSetup[MAIN_QUEUE_NAME].policy,
+  );
 
-  // Create Policy to List Lambda function can access DynamoDB to Read and Write
-  policyListLambdaCanAccessDynamoDB.forEach((tablePolicy) => {
-    grantServiceListServiceReadWriteAnService(lambdaList, env.grantRole.addToRolePolicy, tablePolicy);
+  policyListLambdaCanAccessDynamoDB.forEach((tablePolicy: cdk.aws_iam.PolicyStatement) => {
+    grantServiceListServiceReadWriteAnService(
+      lambdaList,
+      env.grantRole.addToRolePolicy,
+      tablePolicy,
+    );
   });
 
-  // Create Role to List Lambda function can access S3
-  Object.keys(s3Setup).forEach((key) => {
-    const s3SetupItem = s3Setup[key];
+  s3List.forEach((s3SetupItem: S3SetupItemType) => {
     grantServiceListServiceReadWriteAnService(
       lambdaList,
       env.grantRole.addToRolePolicy,
@@ -63,21 +76,21 @@ export const rolesSetup = (
     );
   });
 
-  // Create Role to List Lambda function can access SQS in Main Queue Roles
   grantServiceAnServiceReadWriteAListService(
-    queueMain.queue,
+    sqsSetup[MAIN_QUEUE_NAME].queue,
     env.grantRole.grantSendMessages,
     lambdaList,
   );
 
-  // Create Role to table dynamoDB can access ListLambda function
-  tableList.forEach((table) => {
+  tableList.forEach((table: cdk.aws_dynamodb.Table) => {
     grantServiceAnServiceReadWriteAListService(table, env.grantRole.readWriteData, lambdaList);
   });
 
-  // setting secretManager for all lambda function using secret
   grantServiceAnServiceReadWriteAListService(secret, env.grantRole.grandRead, lambdaList);
 
-  // Connect main queue to lambda getCsvReadDetailUpdateInProcessingLambda(sqs main trigger lambda function) 
-  lambdaAddEventSource(result['getCsvReadDetailUpdateInProcessingLambda'].lambda, queueMain.sqsEventSource);
+  const MAIN_FUNCTION_NAME = env.constants.MAIN_FUNCTION_NAME;
+  lambdaAddEventSource(
+    lambdaSetUp[MAIN_FUNCTION_NAME].lambda,
+    sqsSetup[MAIN_QUEUE_NAME].sqsEventSource,
+  );
 };

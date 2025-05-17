@@ -4,31 +4,30 @@ import {
   settingNewPolicy,
   settingS3Notification,
 } from '../custom-constracts/csv-upload-resources';
-
 import * as cdk from 'aws-cdk-lib';
 import { envConfig } from '../config/env';
-import { EnvS3Type, S3SetupType } from './interface/s3';
+import { EnvS3SetupType, S3SetupItemType, S3SetupType } from './interface/s3';
 
 export const s3Setup = (scope: Construct, lambdaFunction: cdk.aws_lambda.Function) => {
-  const envS3 = envConfig.aws.s3 as EnvS3Type;
-  
+  const envS3 = envConfig.aws.s3 as EnvS3SetupType;
   const result = {} as S3SetupType;
 
-  // Create S3 buckets and policies based on environment variables
-  Object.keys(envS3).forEach((key) => {
+  for (const key of Object.keys(envS3)) {
     const bucketInfo = envS3[key];
-    const s3Bucket = createNewBucketS3(scope, bucketInfo.idBucket, bucketInfo.bucketName);
-    const s3Actions = envConfig.aws.policyActionList.s3RoleList.split(',');
-    const s3Policy = settingNewPolicy(s3Actions, [s3Bucket.arnForObjects('*')]);
-    s3Bucket.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
+    const bucketSetupItem = {} as S3SetupItemType;
 
-    result[key] = {
-      bucket: s3Bucket,
-      policy: s3Policy,
-    };
-      const bucketS3Notification = settingS3Notification(s3Bucket, '.csv');
-      lambdaFunction.addEventSource(bucketS3Notification);
-  });
+    bucketSetupItem.bucket = createNewBucketS3(scope, bucketInfo.idBucket, bucketInfo.bucketName);
+    const s3Actions = envConfig.aws.policyActionList.s3RoleList.split(',');
+    bucketSetupItem.policy = settingNewPolicy(s3Actions, [
+      bucketSetupItem.bucket.arnForObjects('*'),
+    ]);
+    bucketSetupItem.bucket.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY);
+
+    const bucketS3Notification = settingS3Notification(bucketSetupItem.bucket, '.csv');
+    lambdaFunction.addEventSource(bucketS3Notification);
+
+    result[key] = bucketSetupItem;
+  }
 
   return result;
 };

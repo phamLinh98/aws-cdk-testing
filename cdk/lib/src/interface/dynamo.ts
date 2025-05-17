@@ -1,4 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
+
 export type EnvDynamoDBSetupType = {
   [key: string]: {
     idTable: string;
