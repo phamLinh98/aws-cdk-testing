@@ -47,6 +47,15 @@ Resources:
     DeletionPolicy: Delete
     Metadata:
       aws:cdk:path: ServerlessApiStack/LinhClassSideDeadLetterQueue/Resource
+  linhclassfukuqueue4D1235AE:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+      QueueName: linhclass-fuku-queue
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: ServerlessApiStack/linhclass-fuku-queue/Resource
   UsersTable9725E9C8:
     Type: AWS::DynamoDB::Table
     Properties:

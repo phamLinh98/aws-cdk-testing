@@ -23,21 +23,10 @@ export class ApiStack extends cdk.Stack {
 
     const lamda = lambdaListSetup(this, env);
 
-    const s3 = s3Setup(this, lamda[env.constants.MAIN_FUNCTION_NAME].lambda);
+    const s3 = s3Setup(this, lamda[env.constants.BATCH_FUNCTION_NAME].lambda);
 
     roleSetup(lamda, queue, table, s3, secret);
 
-    apiGatewaySetup(this, env, [
-      {
-        lambdaFunc: lamda['createPresignedUrlLambda'].lambda,
-        api: envConfig.aws.apiGateway['createPresignedUrlLambda'].api,
-        method: envConfig.aws.apiGateway['createPresignedUrlLambda'].method,
-      },
-      {
-        lambdaFunc: lamda['getStatusFromDynamoDBLambda'].lambda,
-        api: envConfig.aws.apiGateway['getStatusFromDynamoDBLambda'].api,
-        method: envConfig.aws.apiGateway['getStatusFromDynamoDBLambda'].method,
-      },
-    ]);
+    apiGatewaySetup(this, env, lamda);
   }
 }

@@ -88,9 +88,9 @@ export const roleSetup = (
 
   grantServiceAnServiceReadWriteAListService(secret, env.grantRole.grandRead, lambdaList);
 
-  const MAIN_FUNCTION_NAME = env.constants.MAIN_FUNCTION_NAME;
+  const CSV_FUNCTION_NAME = env.constants.CSV_FUNCTION_NAME;
   lambdaAddEventSource(
-    lambdaSetUp[MAIN_FUNCTION_NAME].lambda,
+    lambdaSetUp[CSV_FUNCTION_NAME].lambda,
     sqsSetup[MAIN_QUEUE_NAME].sqsEventSource,
   );
 };

@@ -157,20 +157,6 @@ export const envConfig = {
       },
     },
     apiGateway: {
-      idLambda: process.env.AWS_API_GATEWAY_ID || 'LinhClassApiGateway',
-      createPresignedUrlLambda: {
-        idLambda: process.env.AWS_CREATE_PRESIGNED_URL_ID_LAMBDA || 'CreatePresignedUrlLambda',
-        api: 'get-url',
-        method: 'GET',
-      },
-      getStatusFromDynamoDBLambda: {
-        idLambda:
-          process.env.AWS_GET_STATUS_FROM_DYNAMODB_ID_LAMBDA || 'GetStatusFromDynamoDBLambda',
-        api: 'get-status',
-        method: 'GET',
-      },
-    },
-    newApiGateway: {
       createPresignedUrlLambda: {
         api: 'get-url',
         method: 'GET',
@@ -197,9 +183,11 @@ export const envConfig = {
       resourceList: 'queue/deadLetter',
     },
     constants: {
+      API_GATE_WAY_ID: process.env.API_GATE_WAY_ID || 'LinhClassApiGateway',
       MAIN_QUEUE_NAME: process.env.MAIN_QUEUE_NAME || 'main',
-      MAIN_FUNCTION_NAME:
-        process.env.MAIN_FUNCTION_NAME || 'getCsvReadDetailUpdateInProcessingLambda',
+      BATCH_FUNCTION_NAME: process.env.BATCH_FUNCTION_NAME || 'getBatchIdUpdateStatusToUploadedIdLambda',
+      URL_FUNCTION_NAME: process.env.CSV_FUNCTION_NAME || 'createPresignedUrlLambda',
+      CSV_FUNCTION_NAME: process.env.CSV_FUNCTION_NAME || 'getCsvReadDetailUpdateInProcessingLambda',
     },
   },
 };

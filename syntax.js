@@ -1,19 +1,13 @@
-const listSetUp = [{ A: 123 }, { B: 234 }];
-
-const infoForSettingAPIGateway = [
-  {
+const apiGateway = {
+  createPresignedUrlLambda: {
     api: 'get-url',
     method: 'GET',
   },
-  {
+  getStatusFromDynamoDBLambda: {
     api: 'get-status',
     method: 'GET',
-  },
-];
-
-const updatedInfo = infoForSettingAPIGateway.map((info, index) => ({
-  ...info,
-  lambdaFunc: listSetUp[index],
-}));
-
-console.log(updatedInfo);
+  }
+}
+  for (const key of Object.keys(apiGateway)) {
+    console.log('key', key)
+  }
