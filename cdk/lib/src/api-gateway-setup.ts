@@ -6,11 +6,11 @@ import {
 import { LambdaSetUpType } from './interface/lambda';
 
 export const apiGatewaySetup = (scope: Construct, env: any, lamda: LambdaSetUpType) => {
-  const envApi = env.apiGateway;
+  const envApiGateway = env.apiGateway;
   const apiName = settingApiGatewayRoleCors(scope, env.constants.API_GATE_WAY_ID);
 
-  for (const key of Object.keys(envApi)) {
-    const apiInfo = envApi[key];
+  for (const key of Object.keys(envApiGateway)) {
+    const apiInfo = envApiGateway[key];
 
     const integration = setupApiGatewayForLambdaFn(lamda[key].lambda);
 

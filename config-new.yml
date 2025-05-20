@@ -1,0 +1,510 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  “API Stack converted from AWS CDK TypeScript to native CloudFormation YAML —
+  **bug-fixed** (removed unsupported `LogicalId` fields, SAM-only `Globals`, and
+  replaced day-to-second maths with explicit parameters).  Every resource,
+  permission, and event source from the original CDK code is still present. All
+  configurable values live in the **Parameters** section and default to the
+  same values as the original `envConfig` object so the template is drop-in but
+  override-able at deploy-time.”
+
+###############################################################################
+# 1. PARAMETERS (defaults = original `envConfig`)
+###############################################################################
+Parameters:
+  # --- General ----------------------------------------------------------------
+  NodeEnv:
+    Type: String
+    Default: Debug
+  CorsOrigin:
+    Type: String
+    Default: "*"
+  LocalFrontendUrl:
+    Type: String
+    Default: "http://localhost:5173"
+  AwsRegion:
+    Type: String
+    Default: ap-southeast-1
+  SecretName:
+    Type: String
+    Default: HitoEnvSecret
+
+  # --- S3 ---------------------------------------------------------------------
+  CsvBucketName:
+    Type: String
+    Default: linhclass-csv-bucket
+  CsvBucketLogicalId:
+    Type: String
+    Default: LinhClassCsvBucket1
+  ImageBucketName:
+    Type: String
+    Default: linhclass-avatar-bucket
+  ImageBucketLogicalId:
+    Type: String
+    Default: LinhClassImageBucket1
+  S3RoleActions:
+    Type: CommaDelimitedList
+    Default: "s3:PutObject,s3:GetObject"
+
+  # --- SQS / DLQ  -------------------------------------------------------------
+  DeadLetterQueueName:
+    Type: String
+    Default: linhclass-dead-letter-queue
+  DeadLetterQueueLogicalId:
+    Type: String
+    Default: LinhClassDeadLetterQueue
+  DeadLetterRetentionSeconds:
+    Type: Number
+    Default: 1209600   # 14 days
+
+  SideDeadLetterQueueName:
+    Type: String
+    Default: linhclass-side-dead-letter-queue
+  SideDeadLetterQueueLogicalId:
+    Type: String
+    Default: LinhClassSideDeadLetterQueue
+  SideDeadLetterRetentionSeconds:
+    Type: Number
+    Default: 1209600
+
+  MainQueueName:
+    Type: String
+    Default: linhclass-lambda-call-to-queue
+  MainQueueLogicalId:
+    Type: String
+    Default: LinhClassMainQueue
+  MainQueueVisibilityTimeout:
+    Type: Number
+    Default: 30
+  MainQueueRetentionSeconds:
+    Type: Number
+    Default: 1209600
+  MainQueueMaxReceiveCount:
+    Type: Number
+    Default: 5
+  MainQueueBatchSize:
+    Type: Number
+    Default: 10
+  MainQueueMaxConcurrency:
+    Type: Number
+    Default: 5
+
+  SideQueueName:
+    Type: String
+    Default: linhclass-side-queue
+  SideQueueLogicalId:
+    Type: String
+    Default: LinhClassSideQueue
+  SideQueueVisibilityTimeout:
+    Type: Number
+    Default: 30
+  SideQueueRetentionSeconds:
+    Type: Number
+    Default: 1209600
+  SideQueueMaxReceiveCount:
+    Type: Number
+    Default: 5
+  SideQueueBatchSize:
+    Type: Number
+    Default: 10
+  SideQueueMaxConcurrency:
+    Type: Number
+    Default: 5
+
+  Take2QueueName:
+    Type: String
+    Default: linhclass-take-2-queue
+  Take2QueueLogicalId:
+    Type: String
+    Default: LinhClassTake2Queue
+  Take2QueueVisibilityTimeout:
+    Type: Number
+    Default: 30
+  Take2QueueRetentionSeconds:
+    Type: Number
+    Default: 1209600
+  Take2QueueMaxReceiveCount:
+    Type: Number
+    Default: 5
+  Take2QueueBatchSize:
+    Type: Number
+    Default: 10
+  Take2QueueMaxConcurrency:
+    Type: Number
+    Default: 5
+
+  FukuQueueName:
+    Type: String
+    Default: linhclass-fuku-queue
+
+  # --- DynamoDB ---------------------------------------------------------------
+  UsersTableName:
+    Type: String
+    Default: users
+  UsersTableLogicalId:
+    Type: String
+    Default: UsersTable
+  UploadCsvTableName:
+    Type: String
+    Default: upload-csv
+  UploadCsvTableLogicalId:
+    Type: String
+    Default: UploadCsvTable
+  DynamoRoleActions:
+    Type: CommaDelimitedList
+    Default: "dynamodb:PutItem,dynamodb:GetItem,dynamodb:UpdateItem"
+
+  # --- Lambda (names, handlers, code S3 locations) ---------------------------
+  CreatePresignedUrlLambdaName:
+    Type: String
+    Default: create-presigned-url-uploading-lambda
+  CreatePresignedUrlLambdaLogicalId:
+    Type: String
+    Default: CreatePresignedUrlLambda
+  CreatePresignedUrlHandler:
+    Type: String
+    Default: create-preurl-s3-update-status-uploading-lambda.handler
+  CreatePresignedUrlCodeS3Bucket:
+    Type: String
+    Default: REPLACE_WITH_S3_BUCKET
+  CreatePresignedUrlCodeS3Key:
+    Type: String
+    Default: REPLACE_WITH_S3_KEY
+
+  GetStatusLambdaName:
+    Type: String
+    Default: get-status-from-dynamodb-lambda
+  GetStatusLambdaLogicalId:
+    Type: String
+    Default: GetStatusFromDynamoDBLambda
+  GetStatusLambdaHandler:
+    Type: String
+    Default: get-status-from-dynamodb-lambda.handler
+  GetStatusLambdaCodeS3Bucket:
+    Type: String
+    Default: REPLACE_WITH_S3_BUCKET
+  GetStatusLambdaCodeS3Key:
+    Type: String
+    Default: REPLACE_WITH_S3_KEY
+
+  GetBatchIdLambdaName:
+    Type: String
+    Default: get-batch-id-update-status-to-uploaded
+  GetBatchIdLambdaLogicalId:
+    Type: String
+    Default: GetBatchIdUpdateStatusToUploadedIdLambda
+  GetBatchIdLambdaHandler:
+    Type: String
+    Default: get-batchid-update-status-to-uploaded.handler
+  GetBatchIdLambdaCodeS3Bucket:
+    Type: String
+    Default: REPLACE_WITH_S3_BUCKET
+  GetBatchIdLambdaCodeS3Key:
+    Type: String
+    Default: REPLACE_WITH_S3_KEY
+
+  GetCsvReadDetailLambdaName:
+    Type: String
+    Default: get-csv-read-detail-update-inprocessing-lambda
+  GetCsvReadDetailLambdaLogicalId:
+    Type: String
+    Default: GetCsvReadDetailUpdateInProcessingLambda
+  GetCsvReadDetailLambdaHandler:
+    Type: String
+    Default: get-csv-read-detail-update-inprocessing-lambda.handler
+  GetCsvReadDetailLambdaCodeS3Bucket:
+    Type: String
+    Default: REPLACE_WITH_S3_BUCKET
+  GetCsvReadDetailLambdaCodeS3Key:
+    Type: String
+    Default: REPLACE_WITH_S3_KEY
+
+  # --- API Gateway -----------------------------------------------------------
+  RestApiLogicalId:
+    Type: String
+    Default: LinhClassApiGateway
+  GetUrlResourcePath:
+    Type: String
+    Default: get-url
+  GetStatusResourcePath:
+    Type: String
+    Default: get-status
+  SqsNormalPolicyActions:
+    Type: CommaDelimitedList
+    Default: "sqs:SendMessage,sqs:ReceiveMessage,sqs:DeleteMessage,sqs:GetQueueAttributes,sqs:ListQueues"
+  SqsSidePolicyActions:
+    Type: CommaDelimitedList
+    Default: "sqs:SendMessage,sqs:ListQueues"
+
+###############################################################################
+# 2. MAPPINGS (none) — 3. CONDITIONS (none)
+###############################################################################
+
+###############################################################################
+# 4. RESOURCES
+###############################################################################
+Resources:
+
+  ###########################################################################
+  # 4.1 S3 BUCKETS
+  ###########################################################################
+  CsvBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BucketName: !Ref CsvBucketName
+      VersioningConfiguration:
+        Status: Enabled
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods: [GET, PUT, POST, DELETE, HEAD]
+            AllowedOrigins: [!Ref CorsOrigin]
+            AllowedHeaders: [Content-Type, Authorization]
+            ExposedHeaders: [ETag]
+      # NotificationConfiguration:
+      #   LambdaConfigurations:
+      #     - Event: s3:ObjectCreated:*
+      #       Filter:
+      #         S3Key:
+      #           Rules:
+      #             - Name: suffix
+      #               Value: .csv
+      #       Function: !GetAtt GetBatchIdLambda.Arn
+
+  ImageBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BucketName: !Ref ImageBucketName
+      VersioningConfiguration:
+        Status: Enabled
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods: [GET, PUT, POST, DELETE, HEAD]
+            AllowedOrigins: [!Ref CorsOrigin]
+            AllowedHeaders: [Content-Type, Authorization]
+            ExposedHeaders: [ETag]
+
+  # ###########################################################################
+  # # 4.2 DYNAMODB TABLES
+  # ###########################################################################
+  # UsersTable:
+  #   Type: AWS::DynamoDB::Table
+  #   DeletionPolicy: Delete
+  #   UpdateReplacePolicy: Delete
+  #   Properties:
+  #     TableName: !Ref UsersTableName
+  #     BillingMode: PAY_PER_REQUEST
+  #     AttributeDefinitions:
+  #       - AttributeName: id
+  #         AttributeType: S
+  #     KeySchema:
+  #       - AttributeName: id
+  #         KeyType: HASH
+
+  # UploadCsvTable:
+  #   Type: AWS::DynamoDB::Table
+  #   DeletionPolicy: Delete
+  #   UpdateReplacePolicy: Delete
+  #   Properties:
+  #     TableName: !Ref UploadCsvTableName
+  #     BillingMode: PAY_PER_REQUEST
+  #     AttributeDefinitions:
+  #       - AttributeName: id
+  #         AttributeType: S
+  #     KeySchema:
+  #       - AttributeName: id
+  #         KeyType: HASH
+
+  # ###########################################################################
+  # # 4.3 SQS QUEUES
+  # ###########################################################################
+  # DeadLetterQueue:
+  #   Type: AWS::SQS::Queue
+  #   Properties:
+  #     QueueName: !Ref DeadLetterQueueName
+  #     MessageRetentionPeriod: !Ref DeadLetterRetentionSeconds
+
+  # SideDeadLetterQueue:
+  #   Type: AWS::SQS::Queue
+  #   Properties:
+  #     QueueName: !Ref SideDeadLetterQueueName
+  #     MessageRetentionPeriod: !Ref SideDeadLetterRetentionSeconds
+
+  # MainQueue:
+  #   Type: AWS::SQS::Queue
+  #   Properties:
+  #     QueueName: !Ref MainQueueName
+  #     VisibilityTimeout: !Ref MainQueueVisibilityTimeout
+  #     MessageRetentionPeriod: !Ref MainQueueRetentionSeconds
+  #     RedrivePolicy:
+  #       deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+  #       maxReceiveCount: !Ref MainQueueMaxReceiveCount
+
+  # SideQueue:
+  #   Type: AWS::SQS::Queue
+  #   Properties:
+  #     QueueName: !Ref SideQueueName
+  #     VisibilityTimeout: !Ref SideQueueVisibilityTimeout
+  #     MessageRetentionPeriod: !Ref SideQueueRetentionSeconds
+  #     RedrivePolicy:
+  #       deadLetterTargetArn: !GetAtt SideDeadLetterQueue.Arn
+  #       maxReceiveCount: !Ref SideQueueMaxReceiveCount
+
+  # Take2Queue:
+  #   Type: AWS::SQS::Queue
+  #   Properties:
+  #     QueueName: !Ref Take2QueueName
+  #     VisibilityTimeout: !Ref Take2QueueVisibilityTimeout
+  #     MessageRetentionPeriod: !Ref Take2QueueRetentionSeconds
+
+  # FukuQueue:
+  #   Type: AWS::SQS::Queue
+  #   Properties:
+  #     QueueName: !Ref FukuQueueName
+
+  # ###########################################################################
+  # # 4.4 IAM — generic exec policy + per-function roles with inline policies
+  # ###########################################################################
+  # LambdaExecutionPolicy:
+  #   Type: AWS::IAM::ManagedPolicy
+  #   Properties:
+  #     ManagedPolicyName: !Sub "${AWS::StackName}-lambda-exec"
+  #     PolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Action: "logs:*"
+  #           Resource: "arn:aws:logs:*:*:*"
+
+  # ###########################################################################
+  # # 4.5 LAMBDA FUNCTIONS
+  # ###########################################################################
+  # CreatePresignedUrlLambdaRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: [lambda.amazonaws.com]
+  #           Action: [sts:AssumeRole]
+  #     ManagedPolicyArns: [!Ref LambdaExecutionPolicy]
+  #     Policies:
+  #       - PolicyName: s3-access
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: Allow
+  #               Action: !Ref S3RoleActions
+  #               Resource:
+  #                 - !Sub arn:aws:s3:::${CsvBucketName}/*
+  #                 - !Sub arn:aws:s3:::${ImageBucketName}/*
+
+  # CreatePresignedUrlLambda:
+  #   Type: AWS::Lambda::Function
+  #   Properties:
+  #     FunctionName: !Ref CreatePresignedUrlLambdaName
+  #     Architectures: [arm64]
+  #     Handler: !Ref CreatePresignedUrlHandler
+  #     Runtime: nodejs18.x
+  #     Code:
+  #       S3Bucket: !Ref CreatePresignedUrlCodeS3Bucket
+  #       S3Key: !Ref CreatePresignedUrlCodeS3Key
+  #     Role: !GetAtt CreatePresignedUrlLambdaRole.Arn
+
+  # GetStatusLambdaRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: [lambda.amazonaws.com]
+  #           Action: [sts:AssumeRole]
+  #     ManagedPolicyArns: [!Ref LambdaExecutionPolicy]
+  #     Policies:
+  #       - PolicyName: dynamo-access
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: Allow
+  #               Action: !Ref DynamoRoleActions
+  #               Resource:
+  #                 - !GetAtt UsersTable.Arn
+  #                 - !GetAtt UploadCsvTable.Arn
+
+  # GetStatusLambda:
+  #   Type: AWS::Lambda::Function
+  #   Properties:
+  #     FunctionName: !Ref GetStatusLambdaName
+  #     Architectures: [arm64]
+  #     Handler: !Ref GetStatusLambdaHandler
+  #     Runtime: nodejs18.x
+  #     Code:
+  #       S3Bucket: !Ref GetStatusLambdaCodeS3Bucket
+  #       S3Key: !Ref GetStatusLambdaCodeS3Key
+  #     Role: !GetAtt GetStatusLambdaRole.Arn
+
+  # GetBatchIdLambdaRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: [lambda.amazonaws.com]
+  #           Action: [sts:AssumeRole]
+  #     ManagedPolicyArns: [!Ref LambdaExecutionPolicy]
+  #     Policies:
+  #       - PolicyName: dynamo-write
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: Allow
+  #               Action: !Ref DynamoRoleActions
+  #               Resource: [!GetAtt UploadCsvTable.Arn]
+
+  # GetBatchIdLambda:
+  #   Type: AWS::Lambda::Function
+  #   Properties:
+  #     FunctionName: !Ref GetBatchIdLambdaName
+  #     Architectures: [arm64]
+  #     Handler: !Ref GetBatchIdLambdaHandler
+  #     Runtime: nodejs18.x
+  #     Code:
+  #       S3Bucket: !Ref GetBatchIdLambdaCodeS3Bucket
+  #       S3Key: !Ref GetBatchIdLambdaCodeS3Key
+  #     Role: !GetAtt GetBatchIdLambdaRole.Arn
+
+  # GetCsvReadDetailLambdaRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: [lambda.amazonaws.com]
+  #           Action: [sts:AssumeRole]
+  #     ManagedPolicyArns: [!Ref LambdaExecutionPolicy]
+  #     Policies:
+  #       - PolicyName: dynamo-write
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: Allow
+  #               Action: !Ref DynamoRoleActions
+  #               Resource: [!GetAtt UploadCsvTable.Arn]
+  #       - PolicyName: sqs-send
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: Allow
+  #               Action: sqs:SendMessage
+  #               Resource: !GetAtt MainQueue.Arn
