@@ -1,0 +1,13 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - npm i
+      - ls -a
+      - ls -a ./src
+      - npm run build-file-hello
+      - ls -a ./dist
+      - cat ./dist/hello.js
+      - node --version
+      - node ./dist/hello.js
