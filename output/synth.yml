@@ -50,9 +50,6 @@ Resources:
                   - :codebuild:ap-northeast-1:650251698778:report-group/
                   - Ref: LinhCodeBuildSetup07F5D3CA
                   - -*
-          - Action: codestar-connections:UseConnection
-            Effect: Allow
-            Resource: arn:aws:codeconnections:ap-northeast-1:650251698778:connection/ad9a7265-4e2b-4173-82d5-562cc9c1e38c
         Version: "2012-10-17"
       PolicyName: LinhCodeBuildSetupRoleDefaultPolicy72E87651
       Roles:
@@ -82,8 +79,6 @@ Resources:
         Location: https://github.com/phamLinh98/codebuild-cicd.git
         ReportBuildStatus: true
         Type: GITHUB
-      Triggers:
-        Webhook: true
     Metadata:
       aws:cdk:path: ServerlessApiStack/LinhCodeBuildSetup/Resource
   CDKMetadata:

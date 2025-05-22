@@ -7,6 +7,6 @@ export const codeBuildSetup = (scope:Construct) => {
         owner: 'phamLinh98',
         repo: 'codebuild-cicd'
       }),
-      buildSpec: codebuild.BuildSpec.fromSourceFilename('./cdk/lib/config/buildspec.yaml'),
+      buildSpec: codebuild.BuildSpec.fromSourceFilename('cdk/lib/config/buildspec.yaml'),
     });
 }
