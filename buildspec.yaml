@@ -15,4 +15,5 @@ phases:
   build:
     commands:
       - echo "Deploying CDK..."
-      - cdk deploy --app 'node dist/cdk/bin/app.js' --require-approval never
+      - cdk deploy --require-approval never --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts'
+
