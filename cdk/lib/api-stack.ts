@@ -8,7 +8,6 @@ import { roleSetup } from './src/role-setup';
 import { s3Setup } from './src/s3-setup';
 import { secretSetup } from './src/secret-setup';
 import { sqsSetup } from './src/sqs-setup';
-import { codeBuildSetup } from './src/code-build-setup';
 
 export class ApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -21,6 +20,5 @@ export class ApiStack extends cdk.Stack {
     const s3 = s3Setup(this, lamda[env.constants.BATCH_FUNCTION_NAME].lambda);
     roleSetup(lamda, queue, table, s3, secret);
     apiGatewaySetup(this, env, lamda);
-    codeBuildSetup(this);
   }
 }
