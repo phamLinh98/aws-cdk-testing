@@ -1,0 +1,14 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+    commands:
+      - echo "Installing npm..."
+      - npm install
+  pre_build:
+    commands:
+      - cdk deploy --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts'
+  build:
+    commands:
+      - echo "Build phase completed."m
