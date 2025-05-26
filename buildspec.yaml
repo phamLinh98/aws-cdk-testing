@@ -4,13 +4,15 @@ phases:
     runtime-versions:
       nodejs: 22
     commands:
-      - echo "Installing npm..."
+      - echo "Installing dependencies..."
       - npm install
       - npm install --save-dev @types/node
       - npm install -g aws-cdk@2
   pre_build:
     commands:
-      - cdk deploy --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts'
+      - echo "Compiling TypeScript..."
+      - npx tsc
   build:
     commands:
-      - echo "Build phase completed."
+      - echo "Deploying CDK..."
+      - cdk deploy --app 'node dist/cdk/bin/app.js' --require-approval never
