@@ -6,6 +6,7 @@ phases:
     commands:
       - echo "Installing npm..."
       - npm install
+      - npm install -g aws-cdk@2
   pre_build:
     commands:
       - cdk deploy --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts'
