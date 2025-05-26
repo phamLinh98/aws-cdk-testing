@@ -6,7 +6,7 @@ phases:
     commands:
       - echo "Installing dependencies..."
       - npm install
-      - npm install --save-dev @types/node
+      - cd cdk && npm install --save-dev @types/node
       - npm install -g aws-cdk@2
   pre_build:
     commands:
