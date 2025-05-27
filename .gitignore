@@ -6,3 +6,5 @@ src/build
 .idea
 .env
 synth.yml
+.dist
+src/rebuild
