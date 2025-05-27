@@ -16,5 +16,6 @@ phases:
       - npx tsc
   build:
     commands:
+      - ls -la
       - echo "Deploying CDK..."
       - cdk deploy --require-approval never --app 'npx ts-node --prefer-ts-exts cdk/bin/app.ts'
