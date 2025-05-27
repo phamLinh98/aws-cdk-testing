@@ -7,6 +7,7 @@ echo "Running install pharse"
 ls -la
 
 echo "Installing dependencies"
+npm install -g aws-cdk@2
 npm install
 npm install --save-dev @types/node
 cd cdk && npm install && npm install --save-dev @types/node && cd ..
@@ -23,9 +24,15 @@ npx -v
 echo "Check aws cli version"
 aws --version
 
+echo "Check cdk version"
+cdk --version
+
 # Prebuild Pharse
 echo "Running pre-build pharse"
 npx tsc
+
+# echo "CDK bootstrap"
+# cdk bootstrap aws://650251698778/ap-northeast-1
 
 # Build Pharse
 echo "Running build pharse"
@@ -34,4 +41,4 @@ echo "Showing directory structure"
 ls -la
 
 echo "Running cdk deploy"
-cd cdk && npm run deploy && cd ..
+npm run deploy
