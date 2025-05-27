@@ -34,4 +34,4 @@ echo "Showing directory structure"
 ls -la
 
 echo "Running cdk deploy"
-npm run deploy
+cd cdk && npm run deploy && cd ..
