@@ -5,7 +5,7 @@ echo "Starting script/build.sh"
 # Install Pharse
 echo "Running install pharse"
 ls -la
-cat buildspec.yml
+cat buildspec.yaml
 
 echo "Installing dependencies"
 npm install -g aws-cdk@2
@@ -37,8 +37,5 @@ cdk bootstrap aws://650251698778/ap-northeast-1
 # Build Pharse
 echo "Running build pharse"
 
-echo "Showing directory structure"
-ls -la
-
 echo "Running cdk deploy"
-npm run deploy
+npm run deploy-require-approval
