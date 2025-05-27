@@ -8,6 +8,7 @@ ls -la
 cat buildspec.yml
 
 echo "Installing dependencies"
+npm install -g aws-cdk@2
 npm install && npm install --save-dev @types/node
 cd cdk && npm install && npm install --save-dev @types/node && cd ..
 
