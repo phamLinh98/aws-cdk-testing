@@ -2,41 +2,6 @@
 
 echo "Starting script/build.sh"
 
-# Install Pharse
-echo "Running install pharse"
-ls -la
-cat buildspec.yaml
-
-echo "Installing dependencies"
-npm install -g aws-cdk@2
-npm install && npm install --save-dev @types/node
-cd cdk && npm install && npm install --save-dev @types/node && cd ..
-
-echo "Check Node.js version"
-node -v
-
-echo "Check npm version"
-npm -v
-
-echo "Check npx version"
-npx -v
-
-echo "Check aws cli version"
-aws --version
-
-echo "Check cdk version"
-cdk --version
-
-# Prebuild Pharse
-echo "Running pre-build pharse"
-npx tsc
-
-echo "CDK bootstrap"
-cdk bootstrap aws://650251698778/ap-northeast-1
-
-echo "Bundle source code"
-npm run bundle-esbuild
-
 # Build Pharse
 echo "Running build pharse"
 
