@@ -1,6 +1,5 @@
 import { getInstanceDynamoDB } from "../../db/config";
 import {
-  connectToDynamoDb,
   updateTableInDynamoDB,
 } from "../create-update-detele-search-dynamo-sqs-s3/connectAndUpdateDynamoDb";
 import {
@@ -12,6 +11,7 @@ import { getSecretOfKey } from "../get-secret-key-from-manager";
 export const handler = async (event: any) => {
   try {
     console.log("event >>>", event);
+    console.log('Linh commit');
     // Get the bucket name and table name from Secrets Manager
     const bucketName = (await getSecretOfKey("bucketCsvName")) as any;
     console.log("bucketName >>>", bucketName);
